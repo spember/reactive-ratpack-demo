@@ -11,21 +11,15 @@ import TodoListModule from './todo/main';
 import {Route} from "react-router";
 import Overview from "./todo/containers/Overview";
 
-// import DeadLetterSearch from './modules/letterManagement/containers/DeadLetterSearch';
-// import DeadLetterFilters from './modules/letterManagement/containers/FilterManagement';
-// import Single from './modules/letterManagement/containers/DeadLetterSingleView';
-
-// we only have one reducer, but by grouping them inside our modules we achieve more hierarchy (e.g. state.letters could have multiple
-// sub state objects beneath it)
 const reducers = Redux.combineReducers({
    todo: TodoListModule.reducers
 });
 
-// const epicMiddleware = createEpicMiddleware(LetterManagement.epics);
+const epicMiddleware = createEpicMiddleware(TodoListModule.epics);
 
 const finalCreateStore = Redux.compose(
     // thunk is required for 'dispatch()' operations
-    // Redux.applyMiddleware(thunk),
+    Redux.applyMiddleware(thunk, epicMiddleware),
 )(Redux.createStore);
 
 const store:any = finalCreateStore(reducers);

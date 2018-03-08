@@ -3,10 +3,12 @@ import Action from "../../core/domain/Action";
 export module CommsActionTypes {
     export const LOADING_BEGIN = 'TODO:LOADING:BEGIN';
     export const LOADING_END = 'TODO:LOADING:END';
+    export const LOADING_ERROR = 'TODO:LOADING:ERROR';
 
     export const CANCEL = 'TODO:LOADING:CANCEL';
     // export const UPDATE_BEGIN = 'dead-letters.updating.initiated';
     // export const UPDATE_END = 'deadl-letters.updating.end'
+
 }
 
 export interface CommsStateTypes {
@@ -34,3 +36,8 @@ function reducer<A extends Action>(commsState:CommsStateTypes = initialCommsStat
 }
 
 export default reducer;
+
+
+export const beginLoadingAction:Action = ({type:CommsActionTypes.LOADING_BEGIN});
+export const endLoadingAction:Action = ({type:CommsActionTypes.LOADING_END});
+export const cancelLoadingAction:Action = ({type:CommsActionTypes.CANCEL});

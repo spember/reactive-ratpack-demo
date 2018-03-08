@@ -13,6 +13,7 @@ ratpack {
         port(5055)
 
         config
+                .development(true)
                 .baseDir(BaseDir.find())
         //.onError(Action.throwException()).yaml("config.yaml")
         //.onError(Action.noop()).yaml("/../../config-local.yaml")
