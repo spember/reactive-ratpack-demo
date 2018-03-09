@@ -20,11 +20,12 @@ dependencies {
     implementation project(':reactive-demo-in-memory')
 
     implementation ratpack.dependency('rx')
+    implementation 'me.drmaas:ratpack-rx2:0.5.0'
     implementation ratpack.dependency('session')
     implementation ratpack.dependency('pac4j')
     implementation ratpack.dependency('handlebars')
 
-    compile group: 'javax.activation', name: 'activation', version: '1.1.1'
+    implementation group: 'javax.activation', name: 'activation', version: '1.1.1'
     runtime "ch.qos.logback:logback-core:${logbackVersion}"
     runtime "ch.qos.logback:logback-classic:${logbackVersion}"
 }

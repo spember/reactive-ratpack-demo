@@ -1,6 +1,7 @@
-import demo.reativeratpack.modules.todo.TodoApiUrlMappings
-import demo.reativeratpack.modules.todo.TodoModule
-import ratpack.func.Action
+import demo.reactiveratpack.modules.todo.TodoApiUrlMappings
+import demo.reactiveratpack.modules.todo.TodoModule
+import demo.reactiveratpack.modules.websocket.WebSocketModule
+import demo.reactiveratpack.modules.websocket.WebsocketApiMappings
 import ratpack.handlebars.HandlebarsModule
 import ratpack.server.BaseDir
 
@@ -11,20 +12,18 @@ import static ratpack.rx.RxRatpack.initialize
 ratpack {
     serverConfig { config ->
         port(5055)
-
         config
-                .development(true)
-                .baseDir(BaseDir.find())
-        //.onError(Action.throwException()).yaml("config.yaml")
-        //.onError(Action.noop()).yaml("/../../config-local.yaml")
-                .env() // override local params with incoming Environment params
-                .sysProps()
+            .development(true)
+            .baseDir(BaseDir.find())
+            .env() // override local params with incoming Environment params
+            .sysProps()
 
     }
 
     bindings {
         initialize()
         module HandlebarsModule
+        module WebSocketModule
         module TodoModule
 
     }
@@ -39,6 +38,9 @@ ratpack {
         prefix("api") {
             prefix("todo") {
                 all chain(registry.get(TodoApiUrlMappings))
+            }
+            prefix("events") {
+                all chain(registry.get(WebsocketApiMappings))
             }
         }
     }

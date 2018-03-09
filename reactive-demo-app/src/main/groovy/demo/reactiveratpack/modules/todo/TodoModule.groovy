@@ -1,4 +1,4 @@
-package demo.reativeratpack.modules.todo
+package demo.reactiveratpack.modules.todo
 
 import com.google.inject.AbstractModule
 import com.google.inject.Provides

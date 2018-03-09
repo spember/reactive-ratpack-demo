@@ -36,13 +36,10 @@ class Overview extends React.Component<StateProps & DispatchProps & OverviewProp
 
     componentDidMount() {
         this.props.loadLists();
-        // const self = this;
-        // ajax.getJSON("/api/todo/lists")
-        //     .subscribe((lists:TodoList[]) => self.setState({lists, isLoading:false}))
     }
 
-    test() {
-        this.props.createList("Sample List");
+    createTodoList(name:string) {
+        this.props.createList(name);
     }
 
     render () {
@@ -50,7 +47,7 @@ class Overview extends React.Component<StateProps & DispatchProps & OverviewProp
         const self = this;
         return (
             <section className="main">
-                <AddListControl submitHandler={this.test.bind(self)}/>
+                <AddListControl submitHandler={this.createTodoList.bind(self)}/>
                 {isLoading ? <Spinner/> : <TodoLister lists={lists} />}
             </section>
         )
@@ -59,7 +56,6 @@ class Overview extends React.Component<StateProps & DispatchProps & OverviewProp
 }
 
 const mapStateToProps = (state: any): StateProps => {
-    console.log(state);
     return {
         lists: state.todo.repository.lists,
         isLoading: state.todo.isLoading

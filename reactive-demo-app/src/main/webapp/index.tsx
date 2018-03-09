@@ -10,6 +10,7 @@ import {BrowserRouter as Router, Switch} from 'react-router-dom';
 import TodoListModule from './todo/main';
 import {Route} from "react-router";
 import Overview from "./todo/containers/Overview";
+import * as Socket from './socketEventTranslator';
 
 const reducers = Redux.combineReducers({
    todo: TodoListModule.reducers
@@ -45,3 +46,5 @@ render(<ReactRedux.Provider store={store}>
     ,
     document.getElementById("appRoot")
 );
+
+Socket.init(store);
