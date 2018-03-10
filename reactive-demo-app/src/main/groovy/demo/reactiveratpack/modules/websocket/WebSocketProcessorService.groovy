@@ -1,34 +1,39 @@
 package demo.reactiveratpack.modules.websocket
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ObjectWriter
-import com.fasterxml.jackson.databind.SerializationConfig
-import com.fasterxml.jackson.databind.SerializationFeature
+import com.google.inject.Inject
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import io.reactivex.processors.PublishProcessor
 
 
 /**
  * Maintains a FlowableProcessor for emitting messages to a WebSocket
  */
+@Slf4j
 @CompileStatic
 class WebSocketProcessorService {
     private PublishProcessor<String> processor
     private ObjectWriter objectWriter
 
-    WebSocketProcessorService() {
+    @Inject WebSocketProcessorService(ObjectMapper objectMapper) {
         processor = PublishProcessor.create()
-
-        ObjectMapper mapper = new ObjectMapper()
-        mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, true)
-        objectWriter = mapper.writer()
+        objectWriter = objectMapper.writer()
     }
 
     PublishProcessor<String> getProcessor() {
         return processor
     }
 
-    void transmit(Object event) {
-        processor.onNext(objectWriter.writeValueAsString(event))
+    Object transmit(Object event) {
+        log.debug("Attempting to map ${event}")
+        try {
+            processor.onNext(objectWriter.writeValueAsString(event))
+        } catch(JsonProcessingException e) {
+            log.error("Could not write: ", e)
+        }
+        event
     }
 }

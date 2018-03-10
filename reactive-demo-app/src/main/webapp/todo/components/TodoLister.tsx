@@ -1,10 +1,10 @@
 import * as React from 'react';
 import TodoList from "../domain/todoList";
+import TodoListRow from './TodoListRow';
 
 interface Props {
     lists: TodoList[]
 }
-
 
 class TodoLister extends React.Component<Props, any> {
 
@@ -14,12 +14,10 @@ class TodoLister extends React.Component<Props, any> {
             return (<p>No Lists Found. Maybe add one?</p>)
         }
         else {
-            console.log("Rendering lists: ", lists);
             return (
-
-                <section>
+                <section className="todo-list-container">
                    <p>Lists:</p>
-                    {lists.forEach(list => (<p>List: {list.name}</p>))}
+                    {lists.map(list => (<TodoListRow key={list.id.value} todoList={list}/>))}
                 </section>
             )
         }

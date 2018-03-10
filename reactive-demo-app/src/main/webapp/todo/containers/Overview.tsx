@@ -2,8 +2,6 @@ import * as React from 'react';
 import {RouteComponentProps} from "react-router";
 import {connect} from "react-redux";
 import TodoList from "../domain/todoList";
-import {Observable} from "rxjs/Observable";
-import {ajax} from "rxjs/observable/dom/ajax"
 import Spinner from "../components/Spinner";
 import TodoLister from "../components/TodoLister";
 import {bindActionCreators} from "redux";
@@ -56,8 +54,9 @@ class Overview extends React.Component<StateProps & DispatchProps & OverviewProp
 }
 
 const mapStateToProps = (state: any): StateProps => {
+    console.log(state.todo.repository.lists);
     return {
-        lists: state.todo.repository.lists,
+        lists: Object.keys(state.todo.repository.lists).map(key => state.todo.repository.lists[key]),
         isLoading: state.todo.isLoading
     };
 };

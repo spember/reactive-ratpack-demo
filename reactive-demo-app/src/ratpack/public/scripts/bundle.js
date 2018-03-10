@@ -5755,14 +5755,45 @@ var RepositoryActionTypes;
     RepositoryActionTypes.SET_LISTS = 'TODO:REPOSITORY:SET_ALL';
     RepositoryActionTypes.FETCH_LISTS = 'TODO:LIST:FETCH';
     RepositoryActionTypes.CREATE_LIST = 'TODO:LIST:CREATE';
+    RepositoryActionTypes.NAME_CHANGE = 'TODO:LIST:NAME_CHANGE';
 })(RepositoryActionTypes = exports.RepositoryActionTypes || (exports.RepositoryActionTypes = {}));
-const initialState = { lists: [] };
+var ServerEventTypes;
+(function (ServerEventTypes) {
+    ServerEventTypes.LIST_CREATED = 'ListCreatedEvent';
+    ServerEventTypes.LIST_NAME_UPDATED = 'ListNameUpdatedEvent';
+})(ServerEventTypes || (ServerEventTypes = {}));
+const convertToMap = (lists) => {
+    let store = {};
+    console.log("Converting ", lists);
+    lists.forEach(list => store[list.id.value] = list);
+    return store;
+};
+const convertEventToList = (createdEvent) => {
+    return {
+        id: {
+            value: createdEvent.entity.value
+        },
+        name: "",
+        owner: {
+            value: createdEvent.userId.value
+        },
+        dateCreated: "",
+        lastUpdated: "",
+        items: []
+    };
+};
+const initialState = { lists: {} };
 function reducer(repositoryState = initialState, action) {
     switch (action.type) {
         case RepositoryActionTypes.RESET:
             return initialState;
-        case RepositoryActionTypes.ADD:
-            return Object.assign({}, repositoryState, { lists: action.value });
+        case RepositoryActionTypes.SET_LISTS:
+            return Object.assign({}, repositoryState, { lists: convertToMap(action.value) });
+        case ServerEventTypes.LIST_CREATED:
+            return Object.assign({}, repositoryState, { lists: Object.assign({}, repositoryState.lists, { [action.value.entity.value]: convertEventToList(action.value) }) });
+        case ServerEventTypes.LIST_NAME_UPDATED:
+            let updatedList = Object.assign({}, repositoryState.lists[action.value.entity.value], { name: action.value.name });
+            return Object.assign({}, repositoryState, { lists: Object.assign({}, repositoryState.lists, { [action.value.entity.value]: updatedList }) });
         default:
             return repositoryState;
     }
@@ -5770,6 +5801,7 @@ function reducer(repositoryState = initialState, action) {
 exports.default = reducer;
 exports.fetchListsAction = () => ({ type: RepositoryActionTypes.FETCH_LISTS });
 exports.createListAction = (name) => ({ type: RepositoryActionTypes.CREATE_LIST, value: name });
+exports.listNameChangeAction = (id, name) => ({ type: RepositoryActionTypes.NAME_CHANGE, value: { id, name } });
 exports.buildListsSetAllAction = (lists) => ({ type: RepositoryActionTypes.SET_LISTS, value: lists });
 
 
@@ -18522,7 +18554,8 @@ const react_router_dom_1 = __webpack_require__(277);
 const main_1 = __webpack_require__(297);
 const react_router_1 = __webpack_require__(578);
 const Overview_1 = __webpack_require__(579);
-const Socket = __webpack_require__(606);
+const Socket = __webpack_require__(584);
+const SingleListView_1 = __webpack_require__(587);
 const reducers = Redux.combineReducers({
     todo: main_1.default.reducers
 });
@@ -18532,6 +18565,7 @@ const store = finalCreateStore(reducers);
 const MainLayout = () => (React.createElement("section", { className: "main-layout" },
     React.createElement("main", null,
         React.createElement(react_router_dom_1.Switch, null,
+            React.createElement(react_router_1.Route, { path: "/list/:id", exact: true, component: SingleListView_1.default }),
             React.createElement(react_router_1.Route, { path: "/", component: Overview_1.default })))));
 react_dom_1.render(React.createElement(ReactRedux.Provider, { store: store },
     React.createElement(react_router_dom_1.BrowserRouter, null,
@@ -40564,20 +40598,28 @@ __webpack_require__(140);
 __webpack_require__(141);
 __webpack_require__(143);
 const rxjs_1 = __webpack_require__(306);
+const postHeaders = { 'Content-Type': 'application/json' };
 exports.listsRequestEpic = (action$, store) => action$.ofType(repository_1.RepositoryActionTypes.FETCH_LISTS)
     .mergeMap(action => ajax_1.ajax.getJSON("/api/todo/lists")
     .takeUntil(action$.ofType(comms_1.CommsActionTypes.CANCEL))
     .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
-    .map((response) => (repository_1.buildListsSetAllAction(response))))
+    .map((response) => (repository_1.buildListsSetAllAction(response.ArrayList))))
     .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
 exports.listsCreateEpic = (action$, store) => action$.ofType(repository_1.RepositoryActionTypes.CREATE_LIST)
     .debounceTime(250)
-    .mergeMap(action => ajax_1.ajax.post("/api/todo/lists", { name: action.value }, { 'Content-Type': 'application/json' })
+    .mergeMap(action => ajax_1.ajax.post("/api/todo/lists", { name: action.value }, postHeaders)
     .takeUntil(action$.ofType(comms_1.CommsActionTypes.CANCEL))
     .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
-    .map((response) => (comms_1.endLoadingAction)))
+    .map((response) => comms_1.endLoadingAction))
     .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
-const epics = redux_observable_1.combineEpics(exports.listsRequestEpic, exports.listsCreateEpic);
+exports.listNameChangeEpic = (action$) => action$.ofType(repository_1.RepositoryActionTypes.NAME_CHANGE)
+    .debounceTime(250)
+    .mergeMap(action => ajax_1.ajax.post("/api/todo/lists/" + action.value.id, action.value, postHeaders)
+    .takeUntil(action$.ofType(comms_1.CommsActionTypes.CANCEL))
+    .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
+    .map((response) => comms_1.endLoadingAction))
+    .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
+const epics = redux_observable_1.combineEpics(exports.listsRequestEpic, exports.listsCreateEpic, exports.listNameChangeEpic);
 exports.default = epics;
 
 
@@ -51220,8 +51262,9 @@ class Overview extends React.Component {
     }
 }
 const mapStateToProps = (state) => {
+    console.log(state.todo.repository.lists);
     return {
-        lists: state.todo.repository.lists,
+        lists: Object.keys(state.todo.repository.lists).map(key => state.todo.repository.lists[key]),
         isLoading: state.todo.isLoading
     };
 };
@@ -51257,6 +51300,7 @@ exports.SmallSpinner = () => (React.createElement("div", { className: "spinner-w
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(6);
+const TodoListRow_1 = __webpack_require__(585);
 class TodoLister extends React.Component {
     render() {
         const { lists = [] } = this.props;
@@ -51264,12 +51308,9 @@ class TodoLister extends React.Component {
             return (React.createElement("p", null, "No Lists Found. Maybe add one?"));
         }
         else {
-            console.log("Rendering lists: ", lists);
-            return (React.createElement("section", null,
+            return (React.createElement("section", { className: "todo-list-container" },
                 React.createElement("p", null, "Lists:"),
-                lists.forEach(list => (React.createElement("p", null,
-                    "List: ",
-                    list.name)))));
+                lists.map(list => (React.createElement(TodoListRow_1.default, { key: list.id.value, todoList: list })))));
         }
     }
 }
@@ -51290,7 +51331,9 @@ const AddListControl = ({ submitHandler }) => (React.createElement("section", { 
     React.createElement("input", { type: "text", placeholder: "My sample list", id: inputId }),
     React.createElement("button", { className: "button todo-list-add__button", onClick: (event) => {
             event.preventDefault();
-            submitHandler(document.getElementById(inputId).value);
+            let input = document.getElementById(inputId);
+            submitHandler(input.value);
+            input.value = "";
         } }, "add")));
 exports.default = AddListControl;
 
@@ -51307,40 +51350,22 @@ const repository_1 = __webpack_require__(72);
 exports.initiateTodoListFetch = () => (dispatch) => {
     dispatch(comms_1.cancelLoadingAction);
     dispatch(comms_1.beginLoadingAction);
-    dispatch(repository_1.fetchListsAction);
+    dispatch(repository_1.fetchListsAction());
 };
 exports.initiateTodoListCreate = (name) => (dispatch) => {
     dispatch(comms_1.cancelLoadingAction);
     dispatch(comms_1.beginLoadingAction);
-    console.log("Creating with ", name);
     dispatch(repository_1.createListAction(name));
+};
+exports.initiateTodoListNameChange = (id, name) => (dispatch) => {
+    dispatch(comms_1.cancelLoadingAction);
+    dispatch(comms_1.beginLoadingAction);
+    dispatch(repository_1.listNameChangeAction(id, name));
 };
 
 
 /***/ }),
-/* 584 */,
-/* 585 */,
-/* 586 */,
-/* 587 */,
-/* 588 */,
-/* 589 */,
-/* 590 */,
-/* 591 */,
-/* 592 */,
-/* 593 */,
-/* 594 */,
-/* 595 */,
-/* 596 */,
-/* 597 */,
-/* 598 */,
-/* 599 */,
-/* 600 */,
-/* 601 */,
-/* 602 */,
-/* 603 */,
-/* 604 */,
-/* 605 */,
-/* 606 */
+/* 584 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -51348,7 +51373,6 @@ exports.initiateTodoListCreate = (name) => (dispatch) => {
 Object.defineProperty(exports, "__esModule", { value: true });
 const exampleSocket = new WebSocket("ws://localhost:5055/api/events");
 exports.init = (store) => {
-    console.log(store);
     exampleSocket.onmessage = (event) => {
         const payloadWithWrapper = JSON.parse(event.data);
         let key = Object.keys(payloadWithWrapper)[0];
@@ -51356,6 +51380,73 @@ exports.init = (store) => {
         store.dispatch({ type: key, value: payloadWithWrapper[key] });
     };
 };
+
+
+/***/ }),
+/* 585 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const React = __webpack_require__(6);
+const react_router_dom_1 = __webpack_require__(277);
+const Button = ({ name, id }) => (React.createElement(react_router_dom_1.Route, { render: ({ history }) => (React.createElement("a", { href: "#", onClick: () => { history.push('/list/' + id); } }, name)) }));
+const TodoListRow = ({ todoList }) => (React.createElement("div", { className: "todo-list-container__row" },
+    React.createElement(Button, { name: todoList.name, id: todoList.id.value }),
+    React.createElement("span", { className: "todo-list-container__count" }, todoList.items.length)));
+exports.default = TodoListRow;
+
+
+/***/ }),
+/* 586 */,
+/* 587 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const React = __webpack_require__(6);
+const redux_1 = __webpack_require__(39);
+const actionCreators_1 = __webpack_require__(583);
+const react_redux_1 = __webpack_require__(96);
+class SingleListView extends React.Component {
+    handleNameChange(event) {
+        event.preventDefault();
+        console.log("new name is ", event.target.value);
+        this.props.changeName(this.props.list.id.value, event.target.value);
+    }
+    render() {
+        const { list } = this.props;
+        if (!list) {
+            return (React.createElement("section", null,
+                React.createElement("h2", null, "Could not find list!")));
+        }
+        else {
+            return (React.createElement("section", null,
+                React.createElement("h2", null,
+                    "Editing: ",
+                    list.name),
+                React.createElement("p", null,
+                    "change name? ",
+                    React.createElement("input", { type: "text", defaultValue: list.name, onChange: this.handleNameChange.bind(this) }),
+                    " "),
+                React.createElement("p", null, "add item")));
+        }
+    }
+}
+const mapStateToProps = (state, props) => {
+    const listId = props.match.params.id;
+    return {
+        list: state.todo.repository.lists[listId]
+    };
+};
+const mapDispatchToProps = (dispatch) => {
+    return {
+        changeName: redux_1.bindActionCreators(actionCreators_1.initiateTodoListNameChange, dispatch)
+    };
+};
+exports.default = react_redux_1.connect(mapStateToProps, mapDispatchToProps)(SingleListView);
 
 
 /***/ })

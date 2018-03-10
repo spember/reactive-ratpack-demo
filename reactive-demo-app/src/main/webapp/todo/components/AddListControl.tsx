@@ -12,7 +12,9 @@ const AddListControl = ({submitHandler}:AddListControlProps) => (
         <input type="text" placeholder="My sample list" id={inputId}/>
         <button className="button todo-list-add__button" onClick={(event:any) => {
             event.preventDefault();
-            submitHandler((document.getElementById(inputId) as HTMLInputElement).value)
+            let input = document.getElementById(inputId) as HTMLInputElement;
+            submitHandler(input.value);
+            input.value = "";
         }}>add</button>
     </section>
 );

@@ -2,9 +2,11 @@ package demo.reactiveratpack.todo
 
 import demo.reactiveratpack.user.UserId
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import io.reactivex.Flowable
 import org.reactivestreams.Publisher
 
+@Slf4j
 @CompileStatic
 class TodoListInMemoryRepository implements TodoListRepository {
 

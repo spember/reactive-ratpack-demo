@@ -11,6 +11,7 @@ import TodoListModule from './todo/main';
 import {Route} from "react-router";
 import Overview from "./todo/containers/Overview";
 import * as Socket from './socketEventTranslator';
+import ListView from "./todo/containers/SingleListView";
 
 const reducers = Redux.combineReducers({
    todo: TodoListModule.reducers
@@ -30,7 +31,9 @@ const MainLayout = () => (
         <main>
             <Switch>
                 {/*<Route path="/app/login" exact component={Single}/>*/}
+                <Route path="/list/:id" exact component={ListView}/>
                 <Route path="/" component={Overview}/>
+
             </Switch>
         </main>
 

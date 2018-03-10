@@ -1,5 +1,5 @@
 import {ajax} from "rxjs/observable/dom/ajax";
-import {RepositoryActionTypes, buildListsSetAllAction} from './reducers/repository';
+import {RepositoryActionTypes, buildListsSetAllAction, NameChangeCommand} from './reducers/repository';
 import {CommsActionTypes, endLoadingAction} from './reducers/comms';
 import {ActionsObservable, combineEpics, Epic} from "redux-observable";
 import {MiddlewareAPI} from "redux";
@@ -15,7 +15,11 @@ import TodoList from './domain/todoList';
 import {AjaxResponse, Observable} from "rxjs";
 import ValueAction from "../core/domain/ValueAction";
 
+interface TodoListCustomResponse {
+    ArrayList: TodoList[]
+}
 
+const postHeaders = { 'Content-Type': 'application/json' };
 
 export const listsRequestEpic = (action$:ActionsObservable<any>, store:MiddlewareAPI<any>) =>
     // I need to fetch, and emit end:loading regardless
@@ -25,7 +29,7 @@ export const listsRequestEpic = (action$:ActionsObservable<any>, store:Middlewar
                 .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
                 //although we don't have any Error handling setup so, the action is empty)
                 .catch(error => Observable.of({type:CommsActionTypes.LOADING_ERROR, value: []}))
-                .map((response:TodoList[]) => (buildListsSetAllAction(response)))
+                .map((response:TodoListCustomResponse) => (buildListsSetAllAction(response.ArrayList)))
         )
     // ensure our action returned from the ajax call comes along, along with a loadingEnd message
     .mergeMap(action => Observable.of(action, endLoadingAction));
@@ -35,18 +39,32 @@ export const listsCreateEpic = (action$:ActionsObservable<ValueAction<string>>, 
     action$.ofType(RepositoryActionTypes.CREATE_LIST)
         .debounceTime(250) // don't spam the server if the user is typing or clicks multiple times
         .mergeMap(action =>
-            ajax.post("/api/todo/lists", {name: action.value}, { 'Content-Type': 'application/json' })
+            ajax.post("/api/todo/lists", {name: action.value}, postHeaders)
                 .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
                 //although we don't have any Error handling setup so, the action is empty)
                 .catch(error => Observable.of({type:CommsActionTypes.LOADING_ERROR, value: []}))
-                .map((response) => (endLoadingAction))
+                .map((response) => endLoadingAction)
         )
     .mergeMap(action => Observable.of(action, endLoadingAction));
+
+export const listNameChangeEpic = (action$:ActionsObservable<ValueAction<NameChangeCommand>>) =>
+    action$.ofType(RepositoryActionTypes.NAME_CHANGE)
+        .debounceTime(250)
+        .mergeMap(action =>
+            ajax.post("/api/todo/lists/"+action.value.id, action.value, postHeaders)
+                .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
+                //although we don't have any Error handling setup so, the action is empty)
+                .catch(error => Observable.of({type:CommsActionTypes.LOADING_ERROR, value: []}))
+                .map((response) => endLoadingAction)
+        )
+        // ensure our action returned from the ajax call comes along, along with a loadingEnd message
+        .mergeMap(action => Observable.of(action, endLoadingAction));
 
 
 const epics:Epic<any, any, any> = combineEpics(
     listsRequestEpic,
-    listsCreateEpic
+    listsCreateEpic,
+    listNameChangeEpic
 );
 
 export default epics;
