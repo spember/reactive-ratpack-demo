@@ -8,6 +8,7 @@ import demo.reactiveratpack.todo.ClientManagementService
 import demo.reactiveratpack.todo.TodoList
 import demo.reactiveratpack.todo.TodoListRepository
 import demo.reactiveratpack.todo.commands.CreateNewListCommand
+import demo.reactiveratpack.todo.commands.UpdateListCommand
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.reactivex.BackpressureStrategy
@@ -57,6 +58,23 @@ class TodoApiUrlMappings extends GroovyChainAction {
                         .toList()
                         .subscribe({List<Event> events ->
                             render(json([events: events.size()]))
+                        }, {
+                            log.error("Failed to stream", it)
+                            response.status(400)
+                            render(json([:]))
+                        })
+                    }
+                }
+            }
+            path(":id") {
+                byMethod {
+                    post {
+                        flow(parse(UpdateListCommand), BackpressureStrategy.ERROR)
+                            .flatMap({clientManagementService.handle(it)})
+                            .map({webSocketProcessorService.transmit(it)})
+                            .toList()
+                            .subscribe({List<Event> events ->
+                                render(json([events: events.size()]))
                         }, {
                             log.error("Failed to stream", it)
                             response.status(400)

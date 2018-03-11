@@ -1,4 +1,4 @@
-import TodoList from "../domain/todoList";
+import TodoList, {IdWrapper} from "../domain/todoList";
 import Action from "../../core/domain/Action";
 import ValueAction from "../../core/domain/ValueAction";
 
@@ -71,10 +71,10 @@ export default reducer;
 export const fetchListsAction = ():Action => ({type: RepositoryActionTypes.FETCH_LISTS});
 export const createListAction = (name:string):ValueAction<string> => ({type: RepositoryActionTypes.CREATE_LIST, value:name});
 export interface NameChangeCommand {
-    id: string,
+    id: IdWrapper,
     name:string
 }
-export const listNameChangeAction = (id:string, name:string):ValueAction<NameChangeCommand> => ({type: RepositoryActionTypes.NAME_CHANGE, value:{id, name}});
+export const listNameChangeAction = (id:string, name:string):ValueAction<NameChangeCommand> => ({type: RepositoryActionTypes.NAME_CHANGE, value:{id: {value: id}, name}});
 export const buildListsSetAllAction = (lists:TodoList[]):ValueAction<TodoList[]> => ({type:RepositoryActionTypes.SET_LISTS, value:lists});
 
 

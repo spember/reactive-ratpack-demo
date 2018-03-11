@@ -21,6 +21,8 @@ interface TodoListCustomResponse {
 
 const postHeaders = { 'Content-Type': 'application/json' };
 
+// these epics could all be combined to something more generic, and have
+// the incoming action determine the url and payload
 export const listsRequestEpic = (action$:ActionsObservable<any>, store:MiddlewareAPI<any>) =>
     // I need to fetch, and emit end:loading regardless
     action$.ofType(RepositoryActionTypes.FETCH_LISTS)
@@ -51,7 +53,7 @@ export const listNameChangeEpic = (action$:ActionsObservable<ValueAction<NameCha
     action$.ofType(RepositoryActionTypes.NAME_CHANGE)
         .debounceTime(250)
         .mergeMap(action =>
-            ajax.post("/api/todo/lists/"+action.value.id, action.value, postHeaders)
+            ajax.post("/api/todo/lists/"+action.value.id.value, action.value, postHeaders)
                 .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
                 //although we don't have any Error handling setup so, the action is empty)
                 .catch(error => Observable.of({type:CommsActionTypes.LOADING_ERROR, value: []}))

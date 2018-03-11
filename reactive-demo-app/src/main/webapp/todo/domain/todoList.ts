@@ -1,6 +1,6 @@
 import TodoItem from './todoItem';
 
-interface IdWrapper {
+export interface IdWrapper {
     value: string;
 }
 

@@ -6,10 +6,12 @@ import demo.reactiveratpack.domain.EntityWithEvents
 import demo.reactiveratpack.domain.Event
 import demo.reactiveratpack.domain.EventRepository
 import demo.reactiveratpack.todo.commands.CreateNewListCommand
+import demo.reactiveratpack.todo.commands.UpdateListCommand
 import demo.reactiveratpack.todo.events.ListCreatedEvent
 import demo.reactiveratpack.todo.events.ListNameUpdatedEvent
 import groovy.transform.CompileStatic
 import io.reactivex.Flowable
+import org.apache.commons.lang.StringUtils
 import org.reactivestreams.Publisher
 
 import java.time.LocalDateTime
@@ -54,17 +56,32 @@ class ClientManagementService {
                 .addEvent(new ListNameUpdatedEvent(id, 2,
                     LocalDateTime.now(), command.userId, command.getName()))
         .build()
-
-        //
-        // A *really* good question to ask later would be:
-        // "What happens if one of the following method calls fails?"
-        //
         todoListRepository.save(entityWithEvents.entity)
         eventRepository.save(entityWithEvents.events)
-//        messageBroadCastService.transmit(entityWithEvents.events)
-
-
         Flowable.fromIterable(entityWithEvents.events)
+    }
+
+    Publisher<Event> handle(UpdateListCommand command) {
+        if (!command.userId || !command.listId) {
+            throw new RuntimeException("Invalid List update: missing values")
+        }
+
+        if (StringUtils.isBlank(command.getName())) {
+            throw new RuntimeException("Name cannot be blank")
+        }
+
+        Flowable.fromPublisher(todoListRepository.get(command.getListId()))
+        .map({TodoList list -> EntityWithEvents.builder()
+            .withEntity(list)
+            .addEvent(new ListNameUpdatedEvent(list.id, list.revision+1, LocalDateTime.now(),
+                command.userId, command.getName()))
+            .build()
+        })
+        .flatMap({EntityWithEvents<TodoList> ewe ->
+            todoListRepository.save(ewe.entity)
+            eventRepository.save(ewe.events)
+            Flowable.fromIterable(ewe.events)
+        })
     }
 
 

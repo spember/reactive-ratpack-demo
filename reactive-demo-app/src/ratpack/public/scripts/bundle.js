@@ -5801,7 +5801,7 @@ function reducer(repositoryState = initialState, action) {
 exports.default = reducer;
 exports.fetchListsAction = () => ({ type: RepositoryActionTypes.FETCH_LISTS });
 exports.createListAction = (name) => ({ type: RepositoryActionTypes.CREATE_LIST, value: name });
-exports.listNameChangeAction = (id, name) => ({ type: RepositoryActionTypes.NAME_CHANGE, value: { id, name } });
+exports.listNameChangeAction = (id, name) => ({ type: RepositoryActionTypes.NAME_CHANGE, value: { id: { value: id }, name } });
 exports.buildListsSetAllAction = (lists) => ({ type: RepositoryActionTypes.SET_LISTS, value: lists });
 
 
@@ -40614,7 +40614,7 @@ exports.listsCreateEpic = (action$, store) => action$.ofType(repository_1.Reposi
     .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
 exports.listNameChangeEpic = (action$) => action$.ofType(repository_1.RepositoryActionTypes.NAME_CHANGE)
     .debounceTime(250)
-    .mergeMap(action => ajax_1.ajax.post("/api/todo/lists/" + action.value.id, action.value, postHeaders)
+    .mergeMap(action => ajax_1.ajax.post("/api/todo/lists/" + action.value.id.value, action.value, postHeaders)
     .takeUntil(action$.ofType(comms_1.CommsActionTypes.CANCEL))
     .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
     .map((response) => comms_1.endLoadingAction))
@@ -51416,6 +51416,10 @@ class SingleListView extends React.Component {
         console.log("new name is ", event.target.value);
         this.props.changeName(this.props.list.id.value, event.target.value);
     }
+    handleAddItem(event) {
+        event.preventDefault();
+        console.log("adding new item");
+    }
     render() {
         const { list } = this.props;
         if (!list) {
@@ -51424,6 +51428,7 @@ class SingleListView extends React.Component {
         }
         else {
             return (React.createElement("section", null,
+                React.createElement("a", { href: "/" }, "Go Back"),
                 React.createElement("h2", null,
                     "Editing: ",
                     list.name),
@@ -51431,7 +51436,10 @@ class SingleListView extends React.Component {
                     "change name? ",
                     React.createElement("input", { type: "text", defaultValue: list.name, onChange: this.handleNameChange.bind(this) }),
                     " "),
-                React.createElement("p", null, "add item")));
+                React.createElement("button", { onClick: this.handleAddItem.bind(this) }, "add item"),
+                list.items.map(item => {
+                    return (React.createElement("p", null, "Have item!"));
+                })));
         }
     }
 }
