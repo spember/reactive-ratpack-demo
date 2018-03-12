@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import demo.reactiveratpack.todo.ListId
 import demo.reactiveratpack.user.UserId
 import groovy.transform.CompileStatic
+import org.apache.commons.lang.StringUtils
 
 @CompileStatic
 class UpdateListCommand {
@@ -17,11 +18,17 @@ class UpdateListCommand {
         this.userId = userId
         this.listId = listId
         this.name = name
+
+        if (!userId || !listId) {
+            throw new RuntimeException("Invalid List update: missing values")
+        }
+
+        if (StringUtils.isBlank(name)) {
+            throw new RuntimeException("Name cannot be blank")
+        }
     }
 
     UpdateListCommand(@JsonProperty("id")final ListId listId, @JsonProperty("name")final String name) {
-        this.listId = listId
-        this.name = name
-        this.userId = new UserId("system")
+        this(new UserId("system"), listId, name)
     }
 }

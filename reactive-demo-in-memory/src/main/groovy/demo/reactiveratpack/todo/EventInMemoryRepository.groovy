@@ -12,13 +12,14 @@ class EventInMemoryRepository implements EventRepository {
     private Map<EntityStreamIdentifier, List<Event>> store = [:]
 
     @Override
-    void save(final List<Event> events) {
+    Publisher<Event> save(final List<Event> events) {
         events.forEach({Event event ->
             if (!store.containsKey(event.getEntity())) {
                 store[event.getEntity()] = []
             }
             store[event.getEntity()].add(event)
         })
+        Flowable.fromIterable(events)
     }
 
     @Override

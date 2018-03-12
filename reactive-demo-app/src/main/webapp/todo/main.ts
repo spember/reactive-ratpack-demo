@@ -1,6 +1,7 @@
 import {combineReducers} from "redux";
 import { combineEpics, Epic } from 'redux-observable';
 import RepositoryReducer from './reducers/repository';
+import ItemRepositoryReducer from './reducers/itemRepository';
 import CommsReducer, {CommsStateTypes} from './reducers/comms';
 import Epics from './rxEpics';
 
@@ -8,6 +9,7 @@ import Epics from './rxEpics';
 module TodoListModule {
     export const reducers = combineReducers({
         repository: RepositoryReducer,
+        items: ItemRepositoryReducer,
         comms: CommsReducer,
     });
     export const epics:Epic<any, any, any> = Epics;

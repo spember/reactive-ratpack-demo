@@ -10,7 +10,7 @@ interface TodoList {
     owner: IdWrapper,
     dateCreated: string,
     lastUpdated: string,
-    items: TodoItem[]
+    items: IdWrapper[]
 }
 
 export default TodoList

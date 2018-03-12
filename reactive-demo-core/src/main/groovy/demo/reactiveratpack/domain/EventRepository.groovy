@@ -6,10 +6,10 @@ import org.reactivestreams.Publisher
 interface EventRepository {
 
     /**
-     * Saves the events, then
+     * Saves the events, then returns them
      *
      */
-    void save(List<Event> events)
+    Publisher<Event> save(List<Event> events)
 
 
     Publisher<Event> loadEventsForEntity(EntityStreamIdentifier identifier)

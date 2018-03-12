@@ -1,8 +1,10 @@
+import {IdWrapper} from "./todoList";
+
 interface TodoItem {
-    id: string,
+    id: IdWrapper,
     text: string,
     complete: boolean,
-    dateCreated: number
+    dateCreated: string
 }
 
 export default TodoItem;

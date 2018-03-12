@@ -1,5 +1,8 @@
 import {ajax} from "rxjs/observable/dom/ajax";
-import {RepositoryActionTypes, buildListsSetAllAction, NameChangeCommand} from './reducers/repository';
+import {
+    RepositoryActionTypes, buildListsSetAllAction, NameChangeCommand,
+    CreateItemCommand
+} from './reducers/repository';
 import {CommsActionTypes, endLoadingAction} from './reducers/comms';
 import {ActionsObservable, combineEpics, Epic} from "redux-observable";
 import {MiddlewareAPI} from "redux";
@@ -11,7 +14,7 @@ import 'rxjs/add/operator/takeUntil';
 import 'rxjs/add/operator/concatMap';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/pluck';
-import TodoList from './domain/todoList';
+import TodoList, {IdWrapper} from './domain/todoList';
 import {AjaxResponse, Observable} from "rxjs";
 import ValueAction from "../core/domain/ValueAction";
 
@@ -63,10 +66,26 @@ export const listNameChangeEpic = (action$:ActionsObservable<ValueAction<NameCha
         .mergeMap(action => Observable.of(action, endLoadingAction));
 
 
+export const itemCreateEpic = (action$:ActionsObservable<ValueAction<CreateItemCommand>>) =>
+    action$.ofType(RepositoryActionTypes.ITEM_CREATE)
+        .mergeMap(action =>
+            ajax.post("/api/todo/lists/"+action.value.listId.value +"/items", action.value, postHeaders)
+                .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
+                //although we don't have any Error handling setup so, the action is empty)
+                .catch(error => Observable.of({type:CommsActionTypes.LOADING_ERROR, value: []}))
+                .map((response) => endLoadingAction)
+        )
+        // ensure our action returned from the ajax call comes along, along with a loadingEnd message
+        .mergeMap(action => Observable.of(action, endLoadingAction));
+
+
+
+
 const epics:Epic<any, any, any> = combineEpics(
     listsRequestEpic,
     listsCreateEpic,
-    listNameChangeEpic
+    listNameChangeEpic,
+    itemCreateEpic
 );
 
 export default epics;

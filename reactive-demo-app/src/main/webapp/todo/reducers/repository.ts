@@ -9,11 +9,15 @@ export module RepositoryActionTypes {
     export const FETCH_LISTS = 'TODO:LIST:FETCH';
     export const CREATE_LIST = 'TODO:LIST:CREATE';
     export const NAME_CHANGE = 'TODO:LIST:NAME_CHANGE';
+    export const ITEM_CREATE = 'TODO:LIST:ITEM:CREATE';
+
+
 }
 
 module ServerEventTypes {
     export const LIST_CREATED = 'ListCreatedEvent';
     export const LIST_NAME_UPDATED = 'ListNameUpdatedEvent';
+    export const ITEM_ADDED = 'ItemAddedEvent';
 }
 
 interface ListStructure {
@@ -26,7 +30,6 @@ export interface RepositoryStateTypes {
 
 const convertToMap = (lists:TodoList[]) => {
     let store:ListStructure = {};
-    console.log("Converting ", lists);
     lists.forEach( list => store[list.id.value] = list);
     return store;
 };
@@ -46,6 +49,13 @@ const convertEventToList = (createdEvent:any):TodoList => {
     }
 };
 
+const addItemToList = (repository:RepositoryStateTypes, listId:IdWrapper, newItemId:IdWrapper):TodoList => {
+    let currentItems = repository.lists[listId.value].items;
+    currentItems.push(newItemId);
+    return {...repository.lists[listId.value], items:currentItems};
+};
+
+
 const initialState:RepositoryStateTypes = {lists: {}};
 
 function reducer<A extends ValueAction<any>>(repositoryState:RepositoryStateTypes = initialState, action:ValueAction<any>) {
@@ -55,10 +65,12 @@ function reducer<A extends ValueAction<any>>(repositoryState:RepositoryStateType
         case RepositoryActionTypes.SET_LISTS:
             return {...repositoryState, lists: convertToMap(action.value)};
         case ServerEventTypes.LIST_CREATED:
-            return {...repositoryState, lists: Object.assign({}, repositoryState.lists, {[action.value.entity.value]: convertEventToList(action.value)})}
+            return {...repositoryState, lists: Object.assign({}, repositoryState.lists, {[action.value.entity.value]: convertEventToList(action.value)})};
         case ServerEventTypes.LIST_NAME_UPDATED:
-            let updatedList = {...repositoryState.lists[action.value.entity.value], name: action.value.name}
-            return {...repositoryState, lists: Object.assign({}, repositoryState.lists, {[action.value.entity.value]: updatedList})}
+            let updatedList = {...repositoryState.lists[action.value.entity.value], name: action.value.name};
+            return {...repositoryState, lists: Object.assign({}, repositoryState.lists, {[action.value.entity.value]: updatedList})};
+        case ServerEventTypes.ITEM_ADDED:
+            return {...repositoryState, lists: Object.assign({}, repositoryState.lists, {[action.value.entity.value]: addItemToList(repositoryState, action.value.entity, action.value.itemId)})};
         default:
             return repositoryState;
     }
@@ -76,5 +88,9 @@ export interface NameChangeCommand {
 }
 export const listNameChangeAction = (id:string, name:string):ValueAction<NameChangeCommand> => ({type: RepositoryActionTypes.NAME_CHANGE, value:{id: {value: id}, name}});
 export const buildListsSetAllAction = (lists:TodoList[]):ValueAction<TodoList[]> => ({type:RepositoryActionTypes.SET_LISTS, value:lists});
+export interface CreateItemCommand {
+    listId: IdWrapper
+}
+export const initiateItemCreateAction = (listId:IdWrapper):ValueAction<CreateItemCommand> => ({type:RepositoryActionTypes.ITEM_CREATE, value:{listId}});
 
 

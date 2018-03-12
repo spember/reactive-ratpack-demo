@@ -9,14 +9,14 @@ class TestEventRepository implements EventRepository {
     private Map<EntityStreamIdentifier, List<Event>> cache = [:]
 
     @Override
-    void save(final List<Event> events) {
+    Publisher<Event> save(final List<Event> events) {
         events.each {
             if (!cache.containsKey(it.entity)){
                 cache[it.entity] = []
             }
             cache[it.entity].add(it)
-
         }
+        Flowable.fromIterable(events)
     }
 
     @Override

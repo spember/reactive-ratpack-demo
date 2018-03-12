@@ -5756,15 +5756,16 @@ var RepositoryActionTypes;
     RepositoryActionTypes.FETCH_LISTS = 'TODO:LIST:FETCH';
     RepositoryActionTypes.CREATE_LIST = 'TODO:LIST:CREATE';
     RepositoryActionTypes.NAME_CHANGE = 'TODO:LIST:NAME_CHANGE';
+    RepositoryActionTypes.ITEM_CREATE = 'TODO:LIST:ITEM:CREATE';
 })(RepositoryActionTypes = exports.RepositoryActionTypes || (exports.RepositoryActionTypes = {}));
 var ServerEventTypes;
 (function (ServerEventTypes) {
     ServerEventTypes.LIST_CREATED = 'ListCreatedEvent';
     ServerEventTypes.LIST_NAME_UPDATED = 'ListNameUpdatedEvent';
+    ServerEventTypes.ITEM_ADDED = 'ItemAddedEvent';
 })(ServerEventTypes || (ServerEventTypes = {}));
 const convertToMap = (lists) => {
     let store = {};
-    console.log("Converting ", lists);
     lists.forEach(list => store[list.id.value] = list);
     return store;
 };
@@ -5782,6 +5783,11 @@ const convertEventToList = (createdEvent) => {
         items: []
     };
 };
+const addItemToList = (repository, listId, newItemId) => {
+    let currentItems = repository.lists[listId.value].items;
+    currentItems.push(newItemId);
+    return Object.assign({}, repository.lists[listId.value], { items: currentItems });
+};
 const initialState = { lists: {} };
 function reducer(repositoryState = initialState, action) {
     switch (action.type) {
@@ -5794,6 +5800,8 @@ function reducer(repositoryState = initialState, action) {
         case ServerEventTypes.LIST_NAME_UPDATED:
             let updatedList = Object.assign({}, repositoryState.lists[action.value.entity.value], { name: action.value.name });
             return Object.assign({}, repositoryState, { lists: Object.assign({}, repositoryState.lists, { [action.value.entity.value]: updatedList }) });
+        case ServerEventTypes.ITEM_ADDED:
+            return Object.assign({}, repositoryState, { lists: Object.assign({}, repositoryState.lists, { [action.value.entity.value]: addItemToList(repositoryState, action.value.entity, action.value.itemId) }) });
         default:
             return repositoryState;
     }
@@ -5803,6 +5811,7 @@ exports.fetchListsAction = () => ({ type: RepositoryActionTypes.FETCH_LISTS });
 exports.createListAction = (name) => ({ type: RepositoryActionTypes.CREATE_LIST, value: name });
 exports.listNameChangeAction = (id, name) => ({ type: RepositoryActionTypes.NAME_CHANGE, value: { id: { value: id }, name } });
 exports.buildListsSetAllAction = (lists) => ({ type: RepositoryActionTypes.SET_LISTS, value: lists });
+exports.initiateItemCreateAction = (listId) => ({ type: RepositoryActionTypes.ITEM_CREATE, value: { listId } });
 
 
 /***/ }),
@@ -40565,12 +40574,14 @@ var createMemoryHistory = function createMemoryHistory() {
 Object.defineProperty(exports, "__esModule", { value: true });
 const redux_1 = __webpack_require__(39);
 const repository_1 = __webpack_require__(72);
+const itemRepository_1 = __webpack_require__(588);
 const comms_1 = __webpack_require__(73);
 const rxEpics_1 = __webpack_require__(298);
 var TodoListModule;
 (function (TodoListModule) {
     TodoListModule.reducers = redux_1.combineReducers({
         repository: repository_1.default,
+        items: itemRepository_1.default,
         comms: comms_1.default,
     });
     TodoListModule.epics = rxEpics_1.default;
@@ -40619,7 +40630,13 @@ exports.listNameChangeEpic = (action$) => action$.ofType(repository_1.Repository
     .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
     .map((response) => comms_1.endLoadingAction))
     .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
-const epics = redux_observable_1.combineEpics(exports.listsRequestEpic, exports.listsCreateEpic, exports.listNameChangeEpic);
+exports.itemCreateEpic = (action$) => action$.ofType(repository_1.RepositoryActionTypes.ITEM_CREATE)
+    .mergeMap(action => ajax_1.ajax.post("/api/todo/lists/" + action.value.listId.value + "/items", action.value, postHeaders)
+    .takeUntil(action$.ofType(comms_1.CommsActionTypes.CANCEL))
+    .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
+    .map((response) => comms_1.endLoadingAction))
+    .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
+const epics = redux_observable_1.combineEpics(exports.listsRequestEpic, exports.listsCreateEpic, exports.listNameChangeEpic, exports.itemCreateEpic);
 exports.default = epics;
 
 
@@ -51347,20 +51364,25 @@ exports.default = AddListControl;
 Object.defineProperty(exports, "__esModule", { value: true });
 const comms_1 = __webpack_require__(73);
 const repository_1 = __webpack_require__(72);
-exports.initiateTodoListFetch = () => (dispatch) => {
+const cancelAndBegin = (dispatch) => {
     dispatch(comms_1.cancelLoadingAction);
     dispatch(comms_1.beginLoadingAction);
+};
+exports.initiateTodoListFetch = () => (dispatch) => {
+    cancelAndBegin(dispatch);
     dispatch(repository_1.fetchListsAction());
 };
 exports.initiateTodoListCreate = (name) => (dispatch) => {
-    dispatch(comms_1.cancelLoadingAction);
-    dispatch(comms_1.beginLoadingAction);
+    cancelAndBegin(dispatch);
     dispatch(repository_1.createListAction(name));
 };
 exports.initiateTodoListNameChange = (id, name) => (dispatch) => {
-    dispatch(comms_1.cancelLoadingAction);
-    dispatch(comms_1.beginLoadingAction);
+    cancelAndBegin(dispatch);
     dispatch(repository_1.listNameChangeAction(id, name));
+};
+exports.initiateTodoItemCreation = (listId) => (dispatch) => {
+    cancelAndBegin(dispatch);
+    dispatch(repository_1.initiateItemCreateAction(listId));
 };
 
 
@@ -51410,18 +51432,23 @@ const React = __webpack_require__(6);
 const redux_1 = __webpack_require__(39);
 const actionCreators_1 = __webpack_require__(583);
 const react_redux_1 = __webpack_require__(96);
+const TodoItemRow_1 = __webpack_require__(589);
 class SingleListView extends React.Component {
     handleNameChange(event) {
         event.preventDefault();
-        console.log("new name is ", event.target.value);
         this.props.changeName(this.props.list.id.value, event.target.value);
     }
     handleAddItem(event) {
         event.preventDefault();
-        console.log("adding new item");
+        this.props.addItem(this.props.list.id);
+    }
+    handleTextChange(event, item) {
+        event.preventDefault();
+        let name = event.target.value;
+        console.log("Changing ", item.id.value, " to " + name);
     }
     render() {
-        const { list } = this.props;
+        const { list, items = [] } = this.props;
         if (!list) {
             return (React.createElement("section", null,
                 React.createElement("h2", null, "Could not find list!")));
@@ -51437,24 +51464,88 @@ class SingleListView extends React.Component {
                     React.createElement("input", { type: "text", defaultValue: list.name, onChange: this.handleNameChange.bind(this) }),
                     " "),
                 React.createElement("button", { onClick: this.handleAddItem.bind(this) }, "add item"),
-                list.items.map(item => {
-                    return (React.createElement("p", null, "Have item!"));
-                })));
+                items.map(item => (React.createElement(TodoItemRow_1.default, { key: item.id.value, todoItem: item, textChangeHandler: this.handleTextChange.bind(this) })))));
         }
     }
 }
 const mapStateToProps = (state, props) => {
     const listId = props.match.params.id;
+    const list = state.todo.repository.lists[listId];
+    let items = [];
+    console.log(state);
+    list.items.forEach(value => {
+        if (state.todo.items.hasOwnProperty(value.value)) {
+            items.push(state.todo.items[value.value]);
+        }
+    });
     return {
-        list: state.todo.repository.lists[listId]
+        list,
+        items
     };
 };
 const mapDispatchToProps = (dispatch) => {
     return {
-        changeName: redux_1.bindActionCreators(actionCreators_1.initiateTodoListNameChange, dispatch)
+        changeName: redux_1.bindActionCreators(actionCreators_1.initiateTodoListNameChange, dispatch),
+        addItem: redux_1.bindActionCreators(actionCreators_1.initiateTodoItemCreation, dispatch)
     };
 };
 exports.default = react_redux_1.connect(mapStateToProps, mapDispatchToProps)(SingleListView);
+
+
+/***/ }),
+/* 588 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var ItemRepositoryActionTypes;
+(function (ItemRepositoryActionTypes) {
+    ItemRepositoryActionTypes.RESET = 'TODO:ITEM:REPOSITORY:RESET';
+    ItemRepositoryActionTypes.ADD = 'TODO:ITEM:REPOSITORY:ADD';
+    ItemRepositoryActionTypes.SET_ITEMS = 'TODO:ITEM:REPOSITORY:SET_ALL';
+    ItemRepositoryActionTypes.FETCH_ITEMS = 'TODO:ITEM:FETCH';
+})(ItemRepositoryActionTypes = exports.ItemRepositoryActionTypes || (exports.ItemRepositoryActionTypes = {}));
+var ServerEventTypes;
+(function (ServerEventTypes) {
+    ServerEventTypes.ITEM_CREATED_EVENT = 'ItemCreatedEvent';
+})(ServerEventTypes || (ServerEventTypes = {}));
+const convertEventToItem = (createdEvent) => {
+    return {
+        id: {
+            value: createdEvent.entity.value
+        },
+        text: "",
+        dateCreated: "",
+        complete: false
+    };
+};
+const initialState = {};
+function reducer(repositoryState = initialState, action) {
+    switch (action.type) {
+        case ServerEventTypes.ITEM_CREATED_EVENT:
+            return Object.assign({}, repositoryState, { [action.value.entity.value]: convertEventToItem(action.value) });
+        default:
+            return repositoryState;
+    }
+}
+exports.default = reducer;
+
+
+/***/ }),
+/* 589 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const React = __webpack_require__(6);
+const TodoItemRow = ({ todoItem, textChangeHandler }) => (React.createElement("div", { className: "todo-items-container__row" },
+    React.createElement("span", null, todoItem.id.value),
+    ":",
+    React.createElement("input", { defaultValue: todoItem.text, onChange: (event) => { textChangeHandler(event, todoItem); } }),
+    React.createElement("button", null, "Mark Complete")));
+exports.default = TodoItemRow;
 
 
 /***/ })

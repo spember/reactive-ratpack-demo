@@ -16,7 +16,7 @@ class UpdateItemCommand {
     final boolean complete
     final UserId userId
 
-    
+
     UpdateItemCommand(final ItemId id, final String name, final boolean complete, final UserId userId) {
         this.id = id
         this.name = name
