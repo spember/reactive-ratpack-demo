@@ -4,12 +4,13 @@ import TodoList, {IdWrapper} from "../domain/todoList";
 import {bindActionCreators} from "redux";
 import {
     initiateTodoItemCreation, initiateTodoItemNameChange,
-    initiateTodoListNameChange
+    initiateTodoListNameChange, initiateTodoItemComplete
 } from "../reducers/actionCreators";
 import {connect} from "react-redux";
 import TodoItem from "../domain/todoItem";
 import TodoItemRow from "../components/TodoItemRow";
 import {ChangeEvent} from "react";
+import TodoItemCompleteRow from "../components/TodoItemCompleteRow";
 
 export interface ListViewProps extends RouteComponentProps<any> {
 }
@@ -23,6 +24,7 @@ export interface DispatchProps {
     changeName: (id:string, name:string) => void;
     addItem: (listId:IdWrapper) => void;
     changeItemText: (id:IdWrapper, listId:IdWrapper, text:string) => void;
+    markItemComplete: (id:IdWrapper, listId:IdWrapper) => void;
 }
 
 
@@ -33,7 +35,6 @@ class SingleListView extends React.Component<ListViewProps & ExternalStateProps&
     }
     handleAddItem(event:Event) {
         event.preventDefault();
-
         this.props.addItem(this.props.list.id);
     }
 
@@ -42,7 +43,12 @@ class SingleListView extends React.Component<ListViewProps & ExternalStateProps&
         let name = (event.target as HTMLInputElement).value;
         console.log("Changing ", item.id.value, " to " + name);
         this.props.changeItemText(item.id, this.props.list.id, name);
+    }
 
+    handleItemComplete(event:MouseEvent, item:TodoItem) {
+        event.preventDefault();
+        console.log("Marking complete");
+        this.props.markItemComplete(item.id, this.props.list.id);
     }
 
     //add items, then edit name. mark as done
@@ -62,7 +68,9 @@ class SingleListView extends React.Component<ListViewProps & ExternalStateProps&
                     <h2>Editing: {list.name}</h2>
                     <p>change name? <input type="text" defaultValue={list.name} onChange={this.handleNameChange.bind(this)}/> </p>
                     <button onClick={this.handleAddItem.bind(this)}>add item</button>
-                    {items.map(item => (<TodoItemRow key={item.id.value} todoItem={item} textChangeHandler={this.handleTextChange.bind(this)}/>))}
+                    {items.map(item => (item.complete
+                        ? <TodoItemCompleteRow key={item.id.value} todoItem={item}/>
+                        : <TodoItemRow key={item.id.value} todoItem={item} textChangeHandler={this.handleTextChange.bind(this)} completeHandler={this.handleItemComplete.bind(this)}/>))}
                 </section>
             )
         }
@@ -88,7 +96,8 @@ const mapDispatchToProps = (dispatch: any):DispatchProps => {
     return {
         changeName: bindActionCreators(initiateTodoListNameChange, dispatch),
         addItem: bindActionCreators(initiateTodoItemCreation, dispatch),
-        changeItemText: bindActionCreators(initiateTodoItemNameChange, dispatch)
+        changeItemText: bindActionCreators(initiateTodoItemNameChange, dispatch),
+        markItemComplete: bindActionCreators(initiateTodoItemComplete, dispatch)
 
     }
 };

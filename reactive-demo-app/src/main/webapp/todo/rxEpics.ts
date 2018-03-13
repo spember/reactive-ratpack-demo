@@ -17,7 +17,7 @@ import 'rxjs/add/operator/pluck';
 import TodoList, {IdWrapper} from './domain/todoList';
 import {AjaxResponse, Observable} from "rxjs";
 import ValueAction from "../core/domain/ValueAction";
-import {ItemRepositoryActionTypes, ItemTextChangeCommand} from "./reducers/itemRepository";
+import {ItemCompleteCommand, ItemRepositoryActionTypes, ItemTextChangeCommand} from "./reducers/itemRepository";
 
 interface TodoListCustomResponse {
     ArrayList: TodoList[]
@@ -92,6 +92,17 @@ export const itemTextChangeEpic = (action$:ActionsObservable<ValueAction<ItemTex
         // ensure our action returned from the ajax call comes along, along with a loadingEnd message
         .mergeMap(action => Observable.of(action, endLoadingAction));
 
+export const itemCompleteEpic = (action$:ActionsObservable<ValueAction<ItemCompleteCommand>>) =>
+    action$.ofType(ItemRepositoryActionTypes.MARK_COMPLETE)
+        .mergeMap(action =>
+            ajax.post("/api/todo/lists/"+action.value.listId.value +"/items/"+action.value.id.value, {id: action.value.id, complete:true}, postHeaders)
+                .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
+                //although we don't have any Error handling setup so, the action is empty)
+                .catch(error => Observable.of({type:CommsActionTypes.LOADING_ERROR, value: []}))
+                .map((response) => endLoadingAction)
+        )
+        // ensure our action returned from the ajax call comes along, along with a loadingEnd message
+        .mergeMap(action => Observable.of(action, endLoadingAction));
 
 
 const epics:Epic<any, any, any> = combineEpics(
@@ -99,7 +110,8 @@ const epics:Epic<any, any, any> = combineEpics(
     listsCreateEpic,
     listNameChangeEpic,
     itemCreateEpic,
-    itemTextChangeEpic
+    itemTextChangeEpic,
+    itemCompleteEpic
 );
 
 export default epics;

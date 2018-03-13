@@ -5847,11 +5847,13 @@ var ItemRepositoryActionTypes;
     ItemRepositoryActionTypes.SET_ITEMS = 'TODO:ITEM:REPOSITORY:SET_ALL';
     ItemRepositoryActionTypes.FETCH_ITEMS = 'TODO:ITEM:FETCH';
     ItemRepositoryActionTypes.CHANGE_TEXT = 'TODO:ITEM:TEXT:CHANGE';
+    ItemRepositoryActionTypes.MARK_COMPLETE = 'TODO:ITEM:ITEM:COMPLETE';
 })(ItemRepositoryActionTypes = exports.ItemRepositoryActionTypes || (exports.ItemRepositoryActionTypes = {}));
 var ServerEventTypes;
 (function (ServerEventTypes) {
     ServerEventTypes.ITEM_CREATED_EVENT = 'ItemCreatedEvent';
     ServerEventTypes.ITEM_TEXT_CHANGE_EVENT = 'ItemTextChangedEvent';
+    ServerEventTypes.ITEM_COMPLETE = 'ItemCompletedEvent';
 })(ServerEventTypes || (ServerEventTypes = {}));
 const convertEventToItem = (createdEvent) => {
     return {
@@ -5863,22 +5865,32 @@ const convertEventToItem = (createdEvent) => {
         complete: false
     };
 };
+const updateItemText = (repository, event) => {
+    let updatedValue = repository[event.entity.value];
+    updatedValue.text = event.text;
+    return updatedValue;
+};
+const markItemComplete = (repository, event) => {
+    let updatedValue = repository[event.entity.value];
+    updatedValue.complete = true;
+    return updatedValue;
+};
 const initialState = {};
 function reducer(repositoryState = initialState, action) {
     switch (action.type) {
         case ServerEventTypes.ITEM_CREATED_EVENT:
             return Object.assign({}, repositoryState, { [action.value.entity.value]: convertEventToItem(action.value) });
         case ServerEventTypes.ITEM_TEXT_CHANGE_EVENT:
-            console.log(action);
-            let updatedValue = repositoryState[action.value.entity.value];
-            updatedValue.text = action.value.text;
-            return Object.assign({}, repositoryState, { [action.value.entity.value]: updatedValue });
+            return Object.assign({}, repositoryState, { [action.value.entity.value]: updateItemText(repositoryState, action.value) });
+        case ServerEventTypes.ITEM_COMPLETE:
+            return Object.assign({}, repositoryState, { [action.value.entity.value]: markItemComplete(repositoryState, action.value) });
         default:
             return repositoryState;
     }
 }
 exports.default = reducer;
 exports.initiateItemNameChangeAction = (id, listId, text) => ({ type: ItemRepositoryActionTypes.CHANGE_TEXT, value: { id, listId, text } });
+exports.initiateItemCompleteAction = (id, listId) => ({ type: ItemRepositoryActionTypes.MARK_COMPLETE, value: { id, listId, complete: true } });
 
 
 /***/ }),
@@ -18678,6 +18690,10 @@ exports.initiateTodoItemCreation = (listId) => (dispatch) => {
 exports.initiateTodoItemNameChange = (itemId, listId, text) => (dispatch) => {
     cancelAndBegin(dispatch);
     dispatch(itemRepository_1.initiateItemNameChangeAction(itemId, listId, text));
+};
+exports.initiateTodoItemComplete = (itemId, listId) => (dispatch) => {
+    cancelAndBegin(dispatch);
+    dispatch(itemRepository_1.initiateItemCompleteAction(itemId, listId));
 };
 
 
@@ -40728,7 +40744,13 @@ exports.itemTextChangeEpic = (action$) => action$.ofType(itemRepository_1.ItemRe
     .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
     .map((response) => comms_1.endLoadingAction))
     .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
-const epics = redux_observable_1.combineEpics(exports.listsRequestEpic, exports.listsCreateEpic, exports.listNameChangeEpic, exports.itemCreateEpic, exports.itemTextChangeEpic);
+exports.itemCompleteEpic = (action$) => action$.ofType(itemRepository_1.ItemRepositoryActionTypes.MARK_COMPLETE)
+    .mergeMap(action => ajax_1.ajax.post("/api/todo/lists/" + action.value.listId.value + "/items/" + action.value.id.value, { id: action.value.id, complete: true }, postHeaders)
+    .takeUntil(action$.ofType(comms_1.CommsActionTypes.CANCEL))
+    .catch(error => rxjs_1.Observable.of({ type: comms_1.CommsActionTypes.LOADING_ERROR, value: [] }))
+    .map((response) => comms_1.endLoadingAction))
+    .mergeMap(action => rxjs_1.Observable.of(action, comms_1.endLoadingAction));
+const epics = redux_observable_1.combineEpics(exports.listsRequestEpic, exports.listsCreateEpic, exports.listNameChangeEpic, exports.itemCreateEpic, exports.itemTextChangeEpic, exports.itemCompleteEpic);
 exports.default = epics;
 
 
@@ -51493,6 +51515,7 @@ const redux_1 = __webpack_require__(23);
 const actionCreators_1 = __webpack_require__(232);
 const react_redux_1 = __webpack_require__(59);
 const TodoItemRow_1 = __webpack_require__(588);
+const TodoItemCompleteRow_1 = __webpack_require__(589);
 class SingleListView extends React.Component {
     handleNameChange(event) {
         event.preventDefault();
@@ -51507,6 +51530,11 @@ class SingleListView extends React.Component {
         let name = event.target.value;
         console.log("Changing ", item.id.value, " to " + name);
         this.props.changeItemText(item.id, this.props.list.id, name);
+    }
+    handleItemComplete(event, item) {
+        event.preventDefault();
+        console.log("Marking complete");
+        this.props.markItemComplete(item.id, this.props.list.id);
     }
     render() {
         const { list, items = [] } = this.props;
@@ -51525,7 +51553,9 @@ class SingleListView extends React.Component {
                     React.createElement("input", { type: "text", defaultValue: list.name, onChange: this.handleNameChange.bind(this) }),
                     " "),
                 React.createElement("button", { onClick: this.handleAddItem.bind(this) }, "add item"),
-                items.map(item => (React.createElement(TodoItemRow_1.default, { key: item.id.value, todoItem: item, textChangeHandler: this.handleTextChange.bind(this) })))));
+                items.map(item => (item.complete
+                    ? React.createElement(TodoItemCompleteRow_1.default, { key: item.id.value, todoItem: item })
+                    : React.createElement(TodoItemRow_1.default, { key: item.id.value, todoItem: item, textChangeHandler: this.handleTextChange.bind(this), completeHandler: this.handleItemComplete.bind(this) })))));
         }
     }
 }
@@ -51548,7 +51578,8 @@ const mapDispatchToProps = (dispatch) => {
     return {
         changeName: redux_1.bindActionCreators(actionCreators_1.initiateTodoListNameChange, dispatch),
         addItem: redux_1.bindActionCreators(actionCreators_1.initiateTodoItemCreation, dispatch),
-        changeItemText: redux_1.bindActionCreators(actionCreators_1.initiateTodoItemNameChange, dispatch)
+        changeItemText: redux_1.bindActionCreators(actionCreators_1.initiateTodoItemNameChange, dispatch),
+        markItemComplete: redux_1.bindActionCreators(actionCreators_1.initiateTodoItemComplete, dispatch)
     };
 };
 exports.default = react_redux_1.connect(mapStateToProps, mapDispatchToProps)(SingleListView);
@@ -51562,12 +51593,29 @@ exports.default = react_redux_1.connect(mapStateToProps, mapDispatchToProps)(Sin
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(5);
-const TodoItemRow = ({ todoItem, textChangeHandler }) => (React.createElement("div", { className: "todo-items-container__row" },
+const TodoItemRow = ({ todoItem, textChangeHandler, completeHandler }) => (React.createElement("div", { className: "todo-items-container__row" },
     React.createElement("span", null, todoItem.id.value),
     ":",
     React.createElement("input", { defaultValue: todoItem.text, onChange: (event) => { textChangeHandler(event, todoItem); } }),
-    React.createElement("button", null, "Mark Complete")));
+    React.createElement("button", { onClick: (event) => completeHandler(event, todoItem) }, "Mark Complete")));
 exports.default = TodoItemRow;
+
+
+/***/ }),
+/* 589 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const React = __webpack_require__(5);
+const TodoItemCompleteRow = ({ todoItem }) => (React.createElement("div", { className: "todo-items-container__complete-row" },
+    React.createElement("span", null, todoItem.id.value),
+    ":",
+    React.createElement("span", null,
+        todoItem.text,
+        " (complete)")));
+exports.default = TodoItemCompleteRow;
 
 
 /***/ })
