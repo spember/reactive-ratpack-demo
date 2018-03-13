@@ -2,10 +2,12 @@ import * as React from 'react';
 import {RouteComponentProps} from "react-router";
 import TodoList, {IdWrapper} from "../domain/todoList";
 import {bindActionCreators} from "redux";
-import {initiateTodoItemCreation, initiateTodoListNameChange} from "../reducers/actionCreators";
+import {
+    initiateTodoItemCreation, initiateTodoItemNameChange,
+    initiateTodoListNameChange
+} from "../reducers/actionCreators";
 import {connect} from "react-redux";
 import TodoItem from "../domain/todoItem";
-import TodoListRow from "../components/TodoListRow";
 import TodoItemRow from "../components/TodoItemRow";
 import {ChangeEvent} from "react";
 
@@ -20,6 +22,7 @@ export interface ExternalStateProps {
 export interface DispatchProps {
     changeName: (id:string, name:string) => void;
     addItem: (listId:IdWrapper) => void;
+    changeItemText: (id:IdWrapper, listId:IdWrapper, text:string) => void;
 }
 
 
@@ -38,6 +41,8 @@ class SingleListView extends React.Component<ListViewProps & ExternalStateProps&
         event.preventDefault();
         let name = (event.target as HTMLInputElement).value;
         console.log("Changing ", item.id.value, " to " + name);
+        this.props.changeItemText(item.id, this.props.list.id, name);
+
     }
 
     //add items, then edit name. mark as done
@@ -82,7 +87,8 @@ const mapStateToProps = (state: any, props:ListViewProps & ExternalStateProps& D
 const mapDispatchToProps = (dispatch: any):DispatchProps => {
     return {
         changeName: bindActionCreators(initiateTodoListNameChange, dispatch),
-        addItem: bindActionCreators(initiateTodoItemCreation, dispatch)
+        addItem: bindActionCreators(initiateTodoItemCreation, dispatch),
+        changeItemText: bindActionCreators(initiateTodoItemNameChange, dispatch)
 
     }
 };

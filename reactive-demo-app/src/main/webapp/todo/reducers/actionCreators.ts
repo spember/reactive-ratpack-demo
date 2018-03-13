@@ -5,6 +5,7 @@ import {Dispatch} from "redux";
 import {beginLoadingAction, cancelLoadingAction} from "./comms";
 import {fetchListsAction, createListAction, listNameChangeAction, initiateItemCreateAction} from './repository';
 import {IdWrapper} from "../domain/todoList";
+import {initiateItemNameChangeAction} from "./itemRepository";
 
 const cancelAndBegin = (dispatch:Dispatch<any>) => {
     dispatch(cancelLoadingAction);
@@ -29,4 +30,10 @@ export const initiateTodoListNameChange = (id:string, name:string) => (dispatch:
 export const initiateTodoItemCreation = (listId:IdWrapper) => (dispatch:Dispatch<any>) => {
     cancelAndBegin(dispatch);
     dispatch(initiateItemCreateAction(listId));
+};
+
+export const initiateTodoItemNameChange = (itemId:IdWrapper, listId:IdWrapper, text:string) => (dispatch:Dispatch<any>) => {
+    cancelAndBegin(dispatch);
+    dispatch(initiateItemNameChangeAction(itemId, listId, text));
+
 };

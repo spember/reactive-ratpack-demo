@@ -9,6 +9,7 @@ import demo.reactiveratpack.todo.TodoList
 import demo.reactiveratpack.todo.TodoListRepository
 import demo.reactiveratpack.todo.commands.CreateNewItemCommand
 import demo.reactiveratpack.todo.commands.CreateNewListCommand
+import demo.reactiveratpack.todo.commands.UpdateItemCommand
 import demo.reactiveratpack.todo.commands.UpdateListCommand
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -98,6 +99,25 @@ class TodoApiUrlMappings extends GroovyChainAction {
                             render(json([:]))
                         })
                     }
+                }
+            }
+
+            path(":id/items/:itemId") {
+                byMethod {
+                    post {
+                        // Ratpack should really me to specify an ObjectMapper for parsing
+                        flow(parse(UpdateItemCommand), BackpressureStrategy.ERROR)
+                        .flatMap({clientManagementService.handle(it)})
+                        .map({webSocketProcessorService.transmit(it)})
+                        .toList()
+                        .subscribe({render json(it)}, {
+                            log.error("Failed to stream", it)
+                            response.status(400)
+                            render(json([:]))
+                        })
+
+                    }
+
                 }
             }
 

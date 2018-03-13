@@ -17,6 +17,7 @@ import 'rxjs/add/operator/pluck';
 import TodoList, {IdWrapper} from './domain/todoList';
 import {AjaxResponse, Observable} from "rxjs";
 import ValueAction from "../core/domain/ValueAction";
+import {ItemRepositoryActionTypes, ItemTextChangeCommand} from "./reducers/itemRepository";
 
 interface TodoListCustomResponse {
     ArrayList: TodoList[]
@@ -54,7 +55,7 @@ export const listsCreateEpic = (action$:ActionsObservable<ValueAction<string>>, 
 
 export const listNameChangeEpic = (action$:ActionsObservable<ValueAction<NameChangeCommand>>) =>
     action$.ofType(RepositoryActionTypes.NAME_CHANGE)
-        .debounceTime(250)
+        .debounceTime(300)
         .mergeMap(action =>
             ajax.post("/api/todo/lists/"+action.value.id.value, action.value, postHeaders)
                 .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
@@ -78,6 +79,18 @@ export const itemCreateEpic = (action$:ActionsObservable<ValueAction<CreateItemC
         // ensure our action returned from the ajax call comes along, along with a loadingEnd message
         .mergeMap(action => Observable.of(action, endLoadingAction));
 
+export const itemTextChangeEpic = (action$:ActionsObservable<ValueAction<ItemTextChangeCommand>>) =>
+    action$.ofType(ItemRepositoryActionTypes.CHANGE_TEXT)
+        .debounceTime(300)
+        .mergeMap(action =>
+            ajax.post("/api/todo/lists/"+action.value.listId.value +"/items/"+action.value.id.value, {id: action.value.id, text: action.value.text}, postHeaders)
+                .takeUntil(action$.ofType(CommsActionTypes.CANCEL))
+                //although we don't have any Error handling setup so, the action is empty)
+                .catch(error => Observable.of({type:CommsActionTypes.LOADING_ERROR, value: []}))
+                .map((response) => endLoadingAction)
+        )
+        // ensure our action returned from the ajax call comes along, along with a loadingEnd message
+        .mergeMap(action => Observable.of(action, endLoadingAction));
 
 
 
@@ -85,7 +98,8 @@ const epics:Epic<any, any, any> = combineEpics(
     listsRequestEpic,
     listsCreateEpic,
     listNameChangeEpic,
-    itemCreateEpic
+    itemCreateEpic,
+    itemTextChangeEpic
 );
 
 export default epics;

@@ -7,9 +7,12 @@ import demo.reactiveratpack.domain.Event
 import demo.reactiveratpack.domain.EventRepository
 import demo.reactiveratpack.todo.commands.CreateNewItemCommand
 import demo.reactiveratpack.todo.commands.CreateNewListCommand
+import demo.reactiveratpack.todo.commands.UpdateItemCommand
 import demo.reactiveratpack.todo.commands.UpdateListCommand
 import demo.reactiveratpack.todo.events.ItemAddedEvent
+import demo.reactiveratpack.todo.events.ItemCompletedEvent
 import demo.reactiveratpack.todo.events.ItemCreatedEvent
+import demo.reactiveratpack.todo.events.ItemTextChangedEvent
 import demo.reactiveratpack.todo.events.ListCreatedEvent
 import demo.reactiveratpack.todo.events.ListNameUpdatedEvent
 import groovy.transform.CompileStatic
@@ -18,6 +21,7 @@ import org.apache.commons.lang.StringUtils
 import org.reactivestreams.Publisher
 
 import java.time.LocalDateTime
+import java.util.concurrent.Flow
 
 /**
  * Used by the Client app to handle
@@ -103,6 +107,29 @@ class ClientManagementService {
         .flatMap({it})
     }
 
+    Publisher<Event> handle(UpdateItemCommand command) {
+        Flowable.fromPublisher(todoItemRepository.get(command.id))
+        .map({TodoItem item ->
+            int revision = item.revision
+            EntityWithEvents.Builder builder = EntityWithEvents.builder()
+            .withEntity(item)
 
 
+            if (command.getText()) {
+                revision++
+                builder.addEvent(new ItemTextChangedEvent(item.id, revision, LocalDateTime.now(), command.userId, command.getText()))
+            }
+
+            if (command.getComplete()) {
+                revision++
+                builder.addEvent(new ItemCompletedEvent(item.id, revision, LocalDateTime.now(), command.userId))
+            }
+
+            builder.build()
+        })
+        .flatMap({EntityWithEvents<TodoItem> ewe ->
+            todoItemRepository.save(ewe.entity)
+            eventRepository.save(ewe.events)
+        })
+    }
 }

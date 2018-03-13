@@ -1,7 +1,7 @@
 package demo.reactiveratpack.todo.commands
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import demo.reactiveratpack.todo.ItemId
-import demo.reactiveratpack.todo.ListId
 import demo.reactiveratpack.user.UserId
 import groovy.transform.CompileStatic
 
@@ -12,15 +12,23 @@ import groovy.transform.CompileStatic
 class UpdateItemCommand {
 
     final ItemId id
-    final String name
-    final boolean complete
+    final String text
+    final Boolean complete
     final UserId userId
 
 
-    UpdateItemCommand(final ItemId id, final String name, final boolean complete, final UserId userId) {
+    UpdateItemCommand(final ItemId id, final String text, final Boolean complete, final UserId userId) {
         this.id = id
-        this.name = name
+        this.text = text
         this.complete = complete
         this.userId = userId
+    }
+
+    UpdateItemCommand(@JsonProperty("id")final ItemId id, @JsonProperty("text")final String text,
+                      @JsonProperty("complete")final Boolean complete) {
+        this.id = id
+        this.text = text
+        this.complete = complete
+        this.userId = new UserId("system")
     }
 }
