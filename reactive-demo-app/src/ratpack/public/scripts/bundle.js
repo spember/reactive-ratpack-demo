@@ -51387,13 +51387,12 @@ class Overview extends React.Component {
     render() {
         const { isLoading, lists } = this.props;
         const self = this;
-        return (React.createElement("section", { className: "main" },
+        return (React.createElement("section", null,
             React.createElement(AddListControl_1.default, { submitHandler: this.createTodoList.bind(self) }),
             isLoading ? React.createElement(Spinner_1.default, null) : React.createElement(TodoLister_1.default, { lists: lists })));
     }
 }
 const mapStateToProps = (state) => {
-    console.log(state.todo.repository.lists);
     return {
         lists: Object.keys(state.todo.repository.lists).map(key => state.todo.repository.lists[key]),
         isLoading: state.todo.isLoading
@@ -51439,9 +51438,7 @@ class TodoLister extends React.Component {
             return (React.createElement("p", null, "No Lists Found. Maybe add one?"));
         }
         else {
-            return (React.createElement("section", { className: "todo-list-container" },
-                React.createElement("p", null, "Lists:"),
-                lists.map(list => (React.createElement(TodoListRow_1.default, { key: list.id.value, todoList: list })))));
+            return (React.createElement("section", { className: "todo-list-container" }, lists.map(list => (React.createElement(TodoListRow_1.default, { key: list.id.value, todoList: list })))));
         }
     }
 }
@@ -51460,7 +51457,9 @@ const react_router_dom_1 = __webpack_require__(119);
 const Button = ({ name, id }) => (React.createElement(react_router_dom_1.Route, { render: ({ history }) => (React.createElement("a", { href: "#", onClick: () => { history.push('/list/' + id); } }, name)) }));
 const TodoListRow = ({ todoList }) => (React.createElement("div", { className: "todo-list-container__row" },
     React.createElement(Button, { name: todoList.name, id: todoList.id.value }),
-    React.createElement("span", { className: "todo-list-container__count" }, todoList.items.length)));
+    React.createElement("span", { className: "todo-list-container__count" },
+        "Items: ",
+        todoList.items.length)));
 exports.default = TodoListRow;
 
 
@@ -51473,8 +51472,8 @@ exports.default = TodoListRow;
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(5);
 const inputId = "todoListName";
-const AddListControl = ({ submitHandler }) => (React.createElement("section", { className: "todo-list-add" },
-    React.createElement("p", null, "Name of new list:"),
+const AddListControl = ({ submitHandler }) => (React.createElement("div", { className: "todo-list-add" },
+    React.createElement("p", { className: "todo-list-add__name" }, "Name of new list:"),
     React.createElement("input", { type: "text", placeholder: "My sample list", id: inputId }),
     React.createElement("button", { className: "button todo-list-add__button", onClick: (event) => {
             event.preventDefault();
@@ -51528,12 +51527,10 @@ class SingleListView extends React.Component {
     handleTextChange(event, item) {
         event.preventDefault();
         let name = event.target.value;
-        console.log("Changing ", item.id.value, " to " + name);
         this.props.changeItemText(item.id, this.props.list.id, name);
     }
     handleItemComplete(event, item) {
         event.preventDefault();
-        console.log("Marking complete");
         this.props.markItemComplete(item.id, this.props.list.id);
     }
     render() {
@@ -51563,7 +51560,6 @@ const mapStateToProps = (state, props) => {
     const listId = props.match.params.id;
     const list = state.todo.repository.lists[listId];
     let items = [];
-    console.log(state);
     list.items.forEach(value => {
         if (state.todo.items.hasOwnProperty(value.value)) {
             items.push(state.todo.items[value.value]);
@@ -51594,10 +51590,9 @@ exports.default = react_redux_1.connect(mapStateToProps, mapDispatchToProps)(Sin
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(5);
 const TodoItemRow = ({ todoItem, textChangeHandler, completeHandler }) => (React.createElement("div", { className: "todo-items-container__row" },
-    React.createElement("span", null, todoItem.id.value),
-    ":",
+    React.createElement("span", { className: "todo-items-container__row__header" }, "Item: "),
     React.createElement("input", { defaultValue: todoItem.text, onChange: (event) => { textChangeHandler(event, todoItem); } }),
-    React.createElement("button", { onClick: (event) => completeHandler(event, todoItem) }, "Mark Complete")));
+    React.createElement("button", { className: "todo-items-container__row__button", onClick: (event) => completeHandler(event, todoItem) }, "Mark Complete")));
 exports.default = TodoItemRow;
 
 
@@ -51610,8 +51605,7 @@ exports.default = TodoItemRow;
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(5);
 const TodoItemCompleteRow = ({ todoItem }) => (React.createElement("div", { className: "todo-items-container__complete-row" },
-    React.createElement("span", null, todoItem.id.value),
-    ":",
+    React.createElement("span", null, "Item: "),
     React.createElement("span", null,
         todoItem.text,
         " (complete)")));

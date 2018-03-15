@@ -16,7 +16,6 @@ class TodoLister extends React.Component<Props, any> {
         else {
             return (
                 <section className="todo-list-container">
-                   <p>Lists:</p>
                     {lists.map(list => (<TodoListRow key={list.id.value} todoList={list}/>))}
                 </section>
             )

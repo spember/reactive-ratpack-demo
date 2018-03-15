@@ -10,8 +10,8 @@ interface RowProps {
 
 const TodoItemRow = ({todoItem, textChangeHandler, completeHandler}:RowProps) => (
     <div className={"todo-items-container__row"}>
-        <span>{todoItem.id.value}</span>:<input defaultValue={todoItem.text} onChange={(event:ChangeEvent<HTMLInputElement>) => {textChangeHandler(event, todoItem)}}/>
-        <button onClick={(event:any) => completeHandler(event,todoItem)}>Mark Complete</button>
+        <span className="todo-items-container__row__header">Item: </span><input defaultValue={todoItem.text} onChange={(event:ChangeEvent<HTMLInputElement>) => {textChangeHandler(event, todoItem)}}/>
+        <button className="todo-items-container__row__button" onClick={(event:any) => completeHandler(event,todoItem)}>Mark Complete</button>
     </div>
 );
 

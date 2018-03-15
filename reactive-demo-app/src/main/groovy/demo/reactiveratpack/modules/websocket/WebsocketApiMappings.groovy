@@ -11,7 +11,7 @@ import ratpack.rx2.internal.DefaultSchedulers
 import ratpack.websocket.WebSockets
 
 @CompileStatic
-class WebsocketApiMappings extends GroovyChainAction{
+class WebsocketApiMappings extends GroovyChainAction {
 
     private Flowable processor
 

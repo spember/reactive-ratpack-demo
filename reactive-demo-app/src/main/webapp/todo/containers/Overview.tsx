@@ -44,7 +44,7 @@ class Overview extends React.Component<StateProps & DispatchProps & OverviewProp
         const {isLoading, lists} = this.props;
         const self = this;
         return (
-            <section className="main">
+            <section>
                 <AddListControl submitHandler={this.createTodoList.bind(self)}/>
                 {isLoading ? <Spinner/> : <TodoLister lists={lists} />}
             </section>
@@ -54,7 +54,6 @@ class Overview extends React.Component<StateProps & DispatchProps & OverviewProp
 }
 
 const mapStateToProps = (state: any): StateProps => {
-    console.log(state.todo.repository.lists);
     return {
         lists: Object.keys(state.todo.repository.lists).map(key => state.todo.repository.lists[key]),
         isLoading: state.todo.isLoading

@@ -15,12 +15,12 @@ const Button = ({name, id}:{name:string, id:string}) => (
             {name}
         </a>
     )} />
-)
+);
 
 const TodoListRow = ({todoList}:RowProps) => (
     <div className="todo-list-container__row">
         <Button name={todoList.name} id={todoList.id.value} />
-        <span className="todo-list-container__count">{todoList.items.length}</span>
+        <span className="todo-list-container__count">Items: {todoList.items.length}</span>
     </div>
 );
 

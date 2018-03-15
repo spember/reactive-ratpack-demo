@@ -7,8 +7,8 @@ export interface AddListControlProps {
 const inputId = "todoListName";
 
 const AddListControl = ({submitHandler}:AddListControlProps) => (
-    <section className="todo-list-add">
-        <p>Name of new list:</p>
+    <div className="todo-list-add">
+        <p className="todo-list-add__name">Name of new list:</p>
         <input type="text" placeholder="My sample list" id={inputId}/>
         <button className="button todo-list-add__button" onClick={(event:any) => {
             event.preventDefault();
@@ -16,7 +16,7 @@ const AddListControl = ({submitHandler}:AddListControlProps) => (
             submitHandler(input.value);
             input.value = "";
         }}>add</button>
-    </section>
+    </div>
 );
 
 export default AddListControl;

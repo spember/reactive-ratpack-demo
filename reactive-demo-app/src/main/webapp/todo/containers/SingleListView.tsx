@@ -41,13 +41,11 @@ class SingleListView extends React.Component<ListViewProps & ExternalStateProps&
     handleTextChange(event:ChangeEvent<HTMLInputElement>, item:TodoItem) {
         event.preventDefault();
         let name = (event.target as HTMLInputElement).value;
-        console.log("Changing ", item.id.value, " to " + name);
         this.props.changeItemText(item.id, this.props.list.id, name);
     }
 
     handleItemComplete(event:MouseEvent, item:TodoItem) {
         event.preventDefault();
-        console.log("Marking complete");
         this.props.markItemComplete(item.id, this.props.list.id);
     }
 
@@ -82,7 +80,6 @@ const mapStateToProps = (state: any, props:ListViewProps & ExternalStateProps& D
     const listId = props.match.params.id;
     const list:TodoList = state.todo.repository.lists[listId];
     let items:TodoItem[] = [];
-    console.log(state);
     list.items.forEach(value => {if (state.todo.items.hasOwnProperty(value.value)){
         items.push(state.todo.items[value.value]);
     }});

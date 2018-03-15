@@ -8,7 +8,7 @@ interface RowProps {
 
 const TodoItemCompleteRow = ({todoItem}:RowProps) => (
     <div className={"todo-items-container__complete-row"}>
-        <span>{todoItem.id.value}</span>:<span>{todoItem.text} (complete)</span>
+        <span>Item: </span><span>{todoItem.text} (complete)</span>
     </div>
 );
 
