@@ -5,8 +5,9 @@ import com.google.inject.Provides
 import com.google.inject.Scopes
 import com.google.inject.Singleton
 import demo.reactiveratpack.domain.EventRepository
-import demo.reactiveratpack.todo.ClientManagementService
+import demo.reactiveratpack.todo.CommandHandlingService
 import demo.reactiveratpack.todo.EventInMemoryRepository
+import demo.reactiveratpack.todo.EventReceiverService
 import demo.reactiveratpack.todo.TodoItemInMemoryRepository
 import demo.reactiveratpack.todo.TodoItemRepository
 import demo.reactiveratpack.todo.TodoListInMemoryRepository
@@ -46,9 +47,20 @@ class TodoModule extends AbstractModule {
 
     @Provides
     @Singleton
-    ClientManagementService clientManagementService(TodoListRepository todoListRepository,
-                                                    TodoItemRepository todoItemRepository,
-                                                    EventRepository eventRepository) {
-        return new ClientManagementService(todoListRepository, todoItemRepository, eventRepository)
+    CommandHandlingService commandHandlingService(TodoListRepository todoListRepository,
+                                                   TodoItemRepository todoItemRepository,
+                                                   EventRepository eventRepository) {
+        return new CommandHandlingService(todoListRepository, todoItemRepository, eventRepository)
     }
+
+
+    @Provides
+    @Singleton
+    EventReceiverService eventReceiverService(TodoListRepository todoListRepository,
+                                                TodoItemRepository todoItemRepository,
+                                                EventRepository eventRepository) {
+        return new EventReceiverService(todoListRepository, todoItemRepository, eventRepository)
+    }
+
+
 }

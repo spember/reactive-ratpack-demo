@@ -1,3 +1,4 @@
+import demo.reactiveratpack.modules.rabbitmq.RabbitMqModule
 import demo.reactiveratpack.modules.todo.TodoApiUrlMappings
 import demo.reactiveratpack.modules.todo.TodoModule
 import demo.reactiveratpack.modules.websocket.WebSocketModule
@@ -25,6 +26,7 @@ ratpack {
         module HandlebarsModule
         module WebSocketModule
         module TodoModule
+        module RabbitMqModule
 
     }
 

@@ -1,6 +1,5 @@
 package demo.reactiveratpack.todo
 
-import demo.reactiveratpack.domain.Event
 import demo.reactiveratpack.domain.TestEventRepository
 import demo.reactiveratpack.todo.commands.CreateNewItemCommand
 import demo.reactiveratpack.todo.commands.CreateNewListCommand
@@ -11,12 +10,9 @@ import demo.reactiveratpack.user.UserId
 import io.reactivex.Flowable
 import spock.lang.Specification
 
-import java.nio.FloatBuffer
+class CommandHandlingServiceSpec extends Specification {
 
-
-class ClientManagementServiceSpec extends Specification {
-
-    ClientManagementService service
+    CommandHandlingService service
 
     TestItemRepository testItemRepository
     TestListRepository testListRepository
@@ -26,7 +22,7 @@ class ClientManagementServiceSpec extends Specification {
     def setup() {
         testItemRepository = new TestItemRepository()
         testListRepository = new TestListRepository()
-        service = new ClientManagementService(testListRepository,
+        service = new CommandHandlingService(testListRepository,
                 testItemRepository, new TestEventRepository())
         userId = new UserId("Test Testington")
     }

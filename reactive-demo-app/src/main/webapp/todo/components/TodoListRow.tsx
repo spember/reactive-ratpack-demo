@@ -17,9 +17,10 @@ const Button = ({name, id}:{name:string, id:string}) => (
     )} />
 );
 
+
 const TodoListRow = ({todoList}:RowProps) => (
     <div className="todo-list-container__row">
-        <Button name={todoList.name} id={todoList.id.value} />
+        <Button name={todoList.name ? todoList.name : "Unnamed List"} id={todoList.id.value} />
         <span className="todo-list-container__count">Items: {todoList.items.length}</span>
     </div>
 );

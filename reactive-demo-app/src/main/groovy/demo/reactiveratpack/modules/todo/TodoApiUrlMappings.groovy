@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import demo.reactiveratpack.domain.Event
 import demo.reactiveratpack.modules.websocket.WebSocketProcessorService
-import demo.reactiveratpack.todo.ClientManagementService
+import demo.reactiveratpack.todo.CommandHandlingService
 import demo.reactiveratpack.todo.TodoList
 import demo.reactiveratpack.todo.TodoListRepository
 import demo.reactiveratpack.todo.commands.CreateNewItemCommand
@@ -25,18 +25,18 @@ import static ratpack.rx2.RxRatpack.flow
 class TodoApiUrlMappings extends GroovyChainAction {
     private TodoListRepository todoListRepository
     private WebSocketProcessorService webSocketProcessorService
-    private ClientManagementService clientManagementService
+    private CommandHandlingService commandHandlingService
     private ObjectMapper objectMapper
 
     @Inject
     TodoApiUrlMappings(
             final TodoListRepository todoListRepository,
             final WebSocketProcessorService webSocketProcessorService,
-            final ClientManagementService clientManagementService,
+            final CommandHandlingService commandHandlingService,
             final ObjectMapper objectMapper) {
         this.todoListRepository = todoListRepository
         this.webSocketProcessorService = webSocketProcessorService
-        this.clientManagementService = clientManagementService
+        this.commandHandlingService = commandHandlingService
         this.objectMapper = objectMapper
     }
 
@@ -55,7 +55,7 @@ class TodoApiUrlMappings extends GroovyChainAction {
                     post {
                         // create
                         flow(parse(CreateNewListCommand), BackpressureStrategy.ERROR)
-                        .flatMap({CreateNewListCommand command -> clientManagementService.handle(command)})
+                        .flatMap({CreateNewListCommand command -> commandHandlingService.handle(command)})
                         .map({webSocketProcessorService.transmit(it)})
                         .toList()
                         .subscribe({List<Event> events ->
@@ -72,7 +72,7 @@ class TodoApiUrlMappings extends GroovyChainAction {
                 byMethod {
                     post {
                         flow(parse(UpdateListCommand), BackpressureStrategy.ERROR)
-                            .flatMap({clientManagementService.handle(it)})
+                            .flatMap({commandHandlingService.handle(it)})
                             .map({webSocketProcessorService.transmit(it)})
                             .toList()
                             .subscribe({List<Event> events ->
@@ -90,7 +90,7 @@ class TodoApiUrlMappings extends GroovyChainAction {
                 byMethod {
                     post {
                         flow(parse(CreateNewItemCommand), BackpressureStrategy.ERROR)
-                        .flatMap({clientManagementService.handle(it)})
+                        .flatMap({commandHandlingService.handle(it)})
                         .map({webSocketProcessorService.transmit(it)})
                         .toList()
                         .subscribe({render json(it)}, {
@@ -107,7 +107,7 @@ class TodoApiUrlMappings extends GroovyChainAction {
                     post {
                         // Ratpack should really me to specify an ObjectMapper for parsing
                         flow(parse(UpdateItemCommand), BackpressureStrategy.ERROR)
-                        .flatMap({clientManagementService.handle(it)})
+                        .flatMap({commandHandlingService.handle(it)})
                         .map({webSocketProcessorService.transmit(it)})
                         .toList()
                         .subscribe({render json(it)}, {

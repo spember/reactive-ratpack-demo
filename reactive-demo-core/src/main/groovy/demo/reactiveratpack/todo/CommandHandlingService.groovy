@@ -27,14 +27,14 @@ import java.util.concurrent.Flow
  * Used by the Client app to handle
  */
 @CompileStatic
-class ClientManagementService {
+class CommandHandlingService {
 
     private final TodoListRepository todoListRepository
     private final TodoItemRepository todoItemRepository
     private final EventRepository eventRepository
 
-    ClientManagementService(final TodoListRepository todoListRepository, final TodoItemRepository todoItemRepository,
-            final EventRepository eventRepository) {
+    CommandHandlingService(final TodoListRepository todoListRepository, final TodoItemRepository todoItemRepository,
+                           final EventRepository eventRepository) {
 
         this.todoListRepository = todoListRepository
         this.todoItemRepository = todoItemRepository

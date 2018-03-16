@@ -2,6 +2,7 @@ package demo.reactiveratpack.domain
 
 import demo.reactiveratpack.user.UserId
 import groovy.transform.CompileStatic
+import groovy.transform.Immutable
 
 import java.time.LocalDateTime
 
