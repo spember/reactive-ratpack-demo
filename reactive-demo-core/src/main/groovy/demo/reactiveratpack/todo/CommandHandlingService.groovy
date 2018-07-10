@@ -1,7 +1,5 @@
 package demo.reactiveratpack.todo
 
-import com.sun.tools.javac.comp.Todo
-import demo.reactiveratpack.amqp.MessageBroadCastService
 import demo.reactiveratpack.domain.EntityWithEvents
 import demo.reactiveratpack.domain.Event
 import demo.reactiveratpack.domain.EventRepository
@@ -17,11 +15,9 @@ import demo.reactiveratpack.todo.events.ListCreatedEvent
 import demo.reactiveratpack.todo.events.ListNameUpdatedEvent
 import groovy.transform.CompileStatic
 import io.reactivex.Flowable
-import org.apache.commons.lang.StringUtils
 import org.reactivestreams.Publisher
 
 import java.time.LocalDateTime
-import java.util.concurrent.Flow
 
 /**
  * Used by the Client app to handle
@@ -64,7 +60,7 @@ class CommandHandlingService {
 
     Publisher<Event> handle(UpdateListCommand command) {
         Flowable.fromPublisher(todoListRepository.get(command.getListId()))
-        .map({TodoList list -> EntityWithEvents.builder()
+        .map({ TodoList list -> EntityWithEvents.builder()
             .withEntity(list)
             .addEvent(new ListNameUpdatedEvent(list.id, list.revision+1, LocalDateTime.now(),
                 command.userId, command.getName()))
@@ -73,7 +69,7 @@ class CommandHandlingService {
         .flatMap({EntityWithEvents<TodoList> ewe ->
             todoListRepository.save(ewe.entity)
             eventRepository.save(ewe.events)
-        })
+        }) as Publisher<Event>
     }
 
     Publisher<Event> handle(CreateNewItemCommand command) {
@@ -92,7 +88,7 @@ class CommandHandlingService {
         }),
 
         Flowable.fromPublisher(todoListRepository.get(command.getListId()))
-        .map({TodoList list ->
+        .map({ TodoList list ->
             EntityWithEvents.builder()
                 .withEntity(list)
                 .addEvent(new ItemAddedEvent(list.id, list.revision+1, LocalDateTime.now(), command.userId, itemId))
@@ -101,15 +97,15 @@ class CommandHandlingService {
         .flatMap({EntityWithEvents<TodoList> ewe ->
             todoListRepository.save(ewe.entity)
             eventRepository.save(ewe.events)
-        }), {Event event1, Event event2 ->
+        }), { Event event1, Event event2 ->
             Flowable.just(event1, event2)
         })
-        .flatMap({it})
+        .flatMap({it}) as Publisher<Event>
     }
 
     Publisher<Event> handle(UpdateItemCommand command) {
         Flowable.fromPublisher(todoItemRepository.get(command.id))
-        .map({TodoItem item ->
+        .map({ TodoItem item ->
             int revision = item.revision
             EntityWithEvents.Builder builder = EntityWithEvents.builder()
             .withEntity(item)
@@ -130,6 +126,6 @@ class CommandHandlingService {
         .flatMap({EntityWithEvents<TodoItem> ewe ->
             todoItemRepository.save(ewe.entity)
             eventRepository.save(ewe.events)
-        })
+        }) as Publisher<Event>
     }
 }

@@ -3,4 +3,5 @@ include 'reactive-demo-core'
 include 'reactive-demo-app'
 include 'reactive-ratpack-frontend'
 include 'reactive-demo-in-memory'
+include 'rabbit-router'
 

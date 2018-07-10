@@ -5,11 +5,9 @@ import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.Connection
 import com.rabbitmq.client.ConnectionFactory
-import com.thirdchannel.rabbitmq.activation.Activations
-import com.thirdchannel.rabbitmq.rxjava.UnacknowledgedMessage
-import com.thirdchannel.rabbitmq.rxjava.jackson.UnacknowledgedDeserializedMessage
 import demo.reactiveratpack.domain.Event
 import demo.reactiveratpack.modules.websocket.WebSocketProcessorService
+import demo.reactiveratpack.rabbitrouter.RabbitRouter
 import demo.reactiveratpack.todo.EventReceiverService
 import demo.reactiveratpack.todo.events.ListCreatedEvent
 import demo.reactiveratpack.todo.events.ListNameUpdatedEvent
@@ -36,7 +34,8 @@ class RabbitInitService implements Service {
     private Channel outgoingMessageChannel;
     private Channel incomingMessageChannel;
     private Channel authenticationChannel;
-    private Activations activations;
+//    private Activations activations;
+    private RabbitRouter rabbitRouter
 
     private static final AMQP.BasicProperties PROPERTIES =
             new AMQP.BasicProperties.Builder()
@@ -66,32 +65,50 @@ class RabbitInitService implements Service {
         outgoingMessageChannel = connection.createChannel();
         authenticationChannel = connection.createChannel();
 
-        activations = new Activations.Builder()
-                .withExceptionHandler({e-> log.error("Error in activation", e)})
-                .withIncomingMappings({c ->
-                    // queues will automatically be created and bound
-                    c.add("list.created", ListCreatedEvent)
-                    c.add("list.name.updated", ListNameUpdatedEvent)
-//                    .add(PROGRAM_UPDATED, ProgramUpdatedIncomingEvent.class)
-//                    .add(CUSTOMER_UPDATED, CustomerUpdatedIncomingEvent.class)
+        rabbitRouter = new RabbitRouter.Builder()
+        .withExchange(EXCHANGE)
+        .withIncomingChannel(incomingMessageChannel)
+        .withIncomingQueue(INCOMING_QUEUE)
+        .withIncomingConsumerTag(INCOMING_CONSUMER_TAG)
+        .addIncomingMapping("list.created", ListCreatedEvent)
+        .addIncomingMapping("list.name.updated", ListNameUpdatedEvent)
+        .addHandler(ListCreatedEvent, {o ->
+            processEvents(eventReceiverService.receive((ListCreatedEvent)o))
         })
-                .withOutgoingMappings({c -> c
-                    //.add(DataFileUploaded.class, EXCHANGE, DATA_FILE_UPLOADED, e -> PROPERTIES)
+        .addHandler(ListNameUpdatedEvent, {o ->
+            processEvents(eventReceiverService.receive((ListNameUpdatedEvent) o))
         })
-                .byType({c -> c
-                    .activate(ListCreatedEvent, {UnacknowledgedDeserializedMessage<ListCreatedEvent> e ->
-                        processEvents(eventReceiverService.receive(e.getObject()))
-                    })
-                    .activate(ListNameUpdatedEvent, {UnacknowledgedDeserializedMessage<ListNameUpdatedEvent> e->
-                        processEvents(eventReceiverService.receive(e.getObject()))
-                    })
-//                    .activateAndPublish(DataFileUploaded.class, event -> dataImportService.event(event.getObject()))
-//                    .activate(ProgramUpdatedIncomingEvent.class, event -> programEventReceiverService.handle(event.getObject()))
-//                    .activate(CustomerUpdatedIncomingEvent.class, event -> programEventReceiverService.handle(event.getObject()))
-        })
-                .withOutgoingChannel(outgoingMessageChannel)
-                .withIncomingQueue(incomingMessageChannel, EXCHANGE, INCOMING_QUEUE, INCOMING_CONSUMER_TAG)
-                .connect();
+        .build().connect()
+
+
+
+//        activations = new Activations.Builder()
+//                .withExceptionHandler({e-> log.error("Error in activation", e)})
+//                .withIncomingMappings({c ->
+//                    // queues will automatically be created and bound
+//                    c.add("list.created", ListCreatedEvent)
+//                    c.add("list.name.updated", ListNameUpdatedEvent)
+////                    .add(PROGRAM_UPDATED, ProgramUpdatedIncomingEvent.class)
+////                    .add(CUSTOMER_UPDATED, CustomerUpdatedIncomingEvent.class)
+//        })
+//                .withOutgoingMappings({c -> c
+//                    //.add(DataFileUploaded.class, EXCHANGE, DATA_FILE_UPLOADED, e -> PROPERTIES)
+//        })
+//                .byType({c -> c
+//                    .activate(ListCreatedEvent, {UnacknowledgedDeserializedMessage<ListCreatedEvent> e ->
+//                        processEvents(eventReceiverService.receive(e.getObject()))
+//                    })
+//                    .activate(ListNameUpdatedEvent, {UnacknowledgedDeserializedMessage<ListNameUpdatedEvent> e->
+//                        processEvents(eventReceiverService.receive(e.getObject()))
+//                    })
+////                    .activateAndPublish(DataFileUploaded.class, event -> dataImportService.event(event.getObject()))
+////                    .activate(ProgramUpdatedIncomingEvent.class, event -> programEventReceiverService.handle(event.getObject()))
+////                    .activate(CustomerUpdatedIncomingEvent.class, event -> programEventReceiverService.handle(event.getObject()))
+//        })
+//                .withOutgoingChannel(outgoingMessageChannel)
+//                .withIncomingQueue(incomingMessageChannel, EXCHANGE, INCOMING_QUEUE, INCOMING_CONSUMER_TAG)
+//                .connect();
+
     }
 
 
@@ -106,7 +123,7 @@ class RabbitInitService implements Service {
     private ConnectionFactory buildConnectionFactory() {
         ConnectionFactory rabbitMqConnectionFactory = new ConnectionFactory();
         // hard coded string s are no bueno, but it's fine for this demo
-        rabbitMqConnectionFactory.setUri("amqp://rabbit_user_dev:password@127.0.0.1:5672/%2Fdemo");
+        rabbitMqConnectionFactory.setUri("amqp://guest:guest@127.0.0.1:5672/%2Ftest");
 
         rabbitMqConnectionFactory.setTopologyRecoveryEnabled(true);
         rabbitMqConnectionFactory.setAutomaticRecoveryEnabled(true);

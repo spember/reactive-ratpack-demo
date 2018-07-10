@@ -18,6 +18,7 @@ ext {
 dependencies {
     implementation project(':reactive-demo-core')
     implementation project(':reactive-demo-in-memory')
+    implementation project(':rabbit-router')
 
     implementation ratpack.dependency('rx')
     implementation 'me.drmaas:ratpack-rx2:0.5.0'

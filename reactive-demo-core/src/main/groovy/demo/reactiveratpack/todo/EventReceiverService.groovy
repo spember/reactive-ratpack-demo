@@ -49,7 +49,7 @@ class EventReceiverService {
     Publisher<Event> receive(ListNameUpdatedEvent event) {
         ListId id = event.entity as ListId
         Flowable.fromPublisher(todoListRepository.get(id))
-        .map({TodoList list -> EntityWithEvents.builder()
+        .map({ TodoList list -> EntityWithEvents.builder()
                 .withEntity(list)
                 .addEvent(new ListNameUpdatedEvent(list.id, list.revision+1, LocalDateTime.now(),
                 event.userId, event.getName()))
@@ -58,7 +58,7 @@ class EventReceiverService {
         .flatMap({EntityWithEvents<TodoList> ewe ->
             todoListRepository.save(ewe.entity)
             eventRepository.save(ewe.events)
-        })
+        }) as Publisher<Event>
     }
 
 

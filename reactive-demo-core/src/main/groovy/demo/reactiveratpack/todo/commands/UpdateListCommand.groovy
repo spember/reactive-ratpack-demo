@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import demo.reactiveratpack.todo.ListId
 import demo.reactiveratpack.user.UserId
 import groovy.transform.CompileStatic
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 @CompileStatic
 class UpdateListCommand {
