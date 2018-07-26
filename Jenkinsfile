@@ -39,4 +39,11 @@ pipeline {
             }
         }
 	}
+
+	post {
+            always {
+                sh "docker stop rabbit"
+                sh "docker rm rabbit"
+            }
+            }
 }
