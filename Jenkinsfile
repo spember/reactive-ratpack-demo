@@ -35,7 +35,7 @@ pipeline {
 
         stage("Build Jar") {
             steps {
-                sh './gradlew --stacktrace project-name:shadowJar -x test '
+                sh './gradlew --stacktrace reactive-demo-app:shadowJar -x test '
             }
         }
 	}
