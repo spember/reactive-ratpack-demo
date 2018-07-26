@@ -24,8 +24,6 @@ class TodoListInMemoryRepository implements TodoListRepository {
 
     @Override
     Publisher<TodoList> get(final ListId id) {
-        println("HAve keys of ${store.keySet().collect({it.value})}")
-        println "Looking for ${id.value}"
         Flowable.just(store[id])
     }
 

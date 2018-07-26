@@ -19,4 +19,8 @@ class StringWrapper {
     String getValue() {
         return value
     }
+
+    String toString() {
+        return value
+    }
 }

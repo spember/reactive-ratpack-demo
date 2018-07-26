@@ -55,6 +55,7 @@ class SingleListView extends React.Component<ListViewProps & ExternalStateProps&
     // need item mark done commands
     render() {
         const {list, items=[]} = this.props;
+        console.log("Have items: ", items);
         if (!list) {
             return (
                 <section><h2>Could not find list!</h2></section>

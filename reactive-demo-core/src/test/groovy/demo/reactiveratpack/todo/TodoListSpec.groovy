@@ -80,11 +80,11 @@ class TodoListSpec extends Specification {
         item3.apply(new ItemTextChangedEvent(item3.id, 2, LocalDateTime.now(), currentUser, "Read a book"))
 
         item1.apply(new ItemCompletedEvent(item1.id, 4, LocalDateTime.now(), currentUser))
-
+        println "adding items"
         mainList.apply(new ItemAddedEvent(mainList.id, 3, LocalDateTime.now(), currentUser, item1.id))
         mainList.apply(new ItemAddedEvent(mainList.id, 4, LocalDateTime.now(), currentUser, item2.id))
         mainList.apply(new ItemAddedEvent(mainList.id, 5, LocalDateTime.now(), currentUser, item3.id))
-
+        println "Removing one"
         mainList.apply(new ItemRemovedEvent(mainList.id, 6, LocalDateTime.now(), currentUser, item2.id))
 
         then:

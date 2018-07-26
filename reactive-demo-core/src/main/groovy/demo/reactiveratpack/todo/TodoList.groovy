@@ -60,9 +60,9 @@ class TodoList implements RevisionCapableEntity {
     TodoList apply(final ItemRemovedEvent event) {
         maybeApply(event, {ItemRemovedEvent e ->
             ImmutableList.Builder<ItemId> itemsBuilder = ImmutableList.builder()
-            items.each {ItemId id -> if (id != e.itemId) {
+            items.each {ItemId id -> if (id.value != e.itemId.value) {
                 itemsBuilder.add(id)
-            }}
+            } }
             items = itemsBuilder.build()
         })
         this
