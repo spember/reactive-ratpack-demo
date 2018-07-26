@@ -5,10 +5,13 @@ buildscript {
     }
     dependencies {
         classpath "io.ratpack:ratpack-gradle:1.5.1"
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
     }
+
 }
 
 apply plugin: "io.ratpack.ratpack-groovy"
+apply plugin: 'com.github.johnrengelman.shadow'
 
 ext {
     logbackVersion = "1.1.7"
