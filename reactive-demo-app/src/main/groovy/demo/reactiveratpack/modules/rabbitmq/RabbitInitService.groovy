@@ -89,7 +89,7 @@ class RabbitInitService implements Service {
     private ConnectionFactory buildConnectionFactory() {
         ConnectionFactory rabbitMqConnectionFactory = new ConnectionFactory();
         // hard coded string s are no bueno, but it's fine for this demo
-        rabbitMqConnectionFactory.setUri("amqp://guest:guest@127.0.0.1:5672/%2Ftest");
+        rabbitMqConnectionFactory.setUri("amqp://guest:guest@127.0.0.1:5672/%2Fdemo");
 
         rabbitMqConnectionFactory.setTopologyRecoveryEnabled(true);
         rabbitMqConnectionFactory.setAutomaticRecoveryEnabled(true);

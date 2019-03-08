@@ -1,39 +1,42 @@
 {
   "name": "react-ratpack-demo",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Demo",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "dev": "webpack --mode development",
+    "build": "webpack --mode production"
   },
   "author": "spember",
   "license": "ISC",
   "dependencies": {
-    "react": "16.2.0",
-    "react-dom": "16.2.0",
-    "react-redux": "^5.0.7",
-    "react-router-dom": "^4.2.2",
-    "react-router-redux": "^4.0.8",
-    "redux": "^3.7.2",
-    "redux-observable": "^0.18.0",
-    "redux-thunk": "^2.2.0",
-    "rxjs": "^5.5.6"
+    "react": "16.8.4",
+    "react-dom": "16.8.4",
+    "react-redux": "6.0.1",
+    "react-router-dom": "4.3.1",
+    "react-router-redux": "4.0.8",
+    "redux": "4.0.1",
+    "redux-observable": "0.18.0",
+    "redux-thunk": "2.3.0",
+    "rxjs": "5.5.6"
   },
   "devDependencies": {
-    "@types/react": "16.0.38",
-    "@types/react-dom": "16.0.4",
-    "@types/react-redux": "^5.0.15",
-    "@types/react-router-dom": "^4.2.4",
-    "@types/react-router-redux": "^5.0.12",
-    "@types/redux": "^3.6.0",
+    "@types/react": "16.8.7",
+    "@types/react-dom": "16.8.2",
+    "@types/react-redux": "7.0.2",
+    "@types/react-router-dom": "4.3.1",
+    "@types/react-router-redux": "5.0.12",
+    "awesome-typescript-loader": "^5.2.1",
     "css-loader": "0.28.9",
-    "extract-text-webpack-plugin": "3.0.0",
+    "extract-text-webpack-plugin": "^3.0.2",
     "node-sass": "4.7.2",
     "npm-watch": "0.3.0",
     "sass-loader": "6.0.6",
-    "ts-loader": "3.5.0",
-    "typescript": "2.7.2",
-    "webpack": "4.16.2",
-    "webpack-cli": "3.1.0"
+    "style-loader": "^0.23.1",
+    "ts-loader": "5.3.3",
+    "typescript": "3.3.3333",
+    "webpack": "4.29.6",
+    "webpack-cli": "3.2.3"
   }
 }
