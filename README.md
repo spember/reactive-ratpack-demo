@@ -27,6 +27,11 @@ Domains:
 * Todo List
 * Todo Item
 
+* try out react 16.8 useState
+* Implement a 'login'
+* list out all events
+* undo list 
+
 #### Base App
 Functionality:
 * User view. Create user
